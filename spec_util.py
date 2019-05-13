@@ -1,5 +1,8 @@
 import subprocess
-import pyfits
+try:
+    import astropy.io.fits as pyfits
+except:
+    import pyfits
 
 
 def grppha(grpfile, specfile, bkgfile=None, rmffile=None, arffile=None, grpmin=20):

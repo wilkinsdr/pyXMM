@@ -21,7 +21,7 @@ class EPICExtractor(object):
 
         self.instrument = instrument
 
-        if(instrument == 'pn'):
+        if(instrument == self.instrument):
             self.instdir = self.procdir + '/pn'
         elif(instrument == 'mos'):
             self.instdir = self.procdir + '/mos'
@@ -32,6 +32,7 @@ class EPICExtractor(object):
         self.lcdir = self.instdir + '/lightcurves'
         self.imagedir = self.instdir + '/images'
         self.epatdir = self.instdir + '/epat'
+        self.gtidir = self.instdir + '/gti'
 
         self.cif = self.procdir + '/ccf.cif'
 
@@ -227,7 +228,7 @@ class EPICExtractor(object):
     def ProcEVL(self):
         if self.instrument == 'mos':
             args = ['emproc']
-        elif self.instrument == 'pn':
+        elif self.instrument == self.instrument:
             args = ['epproc']
 
         print("Running %s to produce event lists..." % args[0])
@@ -245,7 +246,7 @@ class EPICExtractor(object):
 
         if self.instrument == 'mos':
             filt = ['(PATTERN<=12)','(PI in [200:12000])','(FLAG==0)','#XMMEA_EM'] + filter_terms
-        elif self.instrument == 'pn':
+        elif self.instrument == self.instrument:
             filt = ['(PATTERN<=4)','(PI in [200:15000])','(FLAG==0)','#XMMEA_EP'] + filter_terms
         expr = '&&'.join(filt)
 
@@ -279,7 +280,7 @@ class EPICExtractor(object):
         tbin = 10
         if self.instrument == 'mos':
             ratelim = 0.35
-        elif self.instrument == 'pn':
+        elif self.instrument == self.instrument:
             ratelim = 0.4
 
         for pointing, evl in zip(self.pointings, self.filt_evls):
@@ -394,7 +395,7 @@ class EPICExtractor(object):
         if(not os.path.exists(extract_dir)):
             os.makedirs(extract_dir)
 
-        if(self.instrument == 'pn'):
+        if(self.instrument == self.instrument):
             specchannelmax = 20479
         elif(self.instrument == 'mos'):
             specchannelmax = 11999
@@ -446,6 +447,8 @@ class EPICExtractor(object):
             #
             proc = subprocess.Popen(args, env=self.envvars).wait()
 
+            return specfile
+
     def create_rmf(self, regionkey, extract_dir='', specid='', pointings=[]):
         #
         # create the RMF for the spectrum with a specified specid in extract_dir
@@ -457,7 +460,7 @@ class EPICExtractor(object):
             if(len(pointings) > 0 and pointing not in pointings):
                 continue
 
-            namearr = [self.obsdir, pointing, regionkey, 'pn', specid]
+            namearr = [self.obsdir, pointing, regionkey, self.instrument, specid]
             name = '_'.join(filter(None, namearr))
 
             specfile = extract_dir + '/' + name + '.pha'
@@ -492,7 +495,7 @@ class EPICExtractor(object):
             if(len(pointings) > 0 and pointing not in pointings):
                 continue
 
-            namearr = [self.obsdir, pointing, regionkey, 'pn', specid]
+            namearr = [self.obsdir, pointing, regionkey, self.instrument, specid]
             name = '_'.join(filter(None, namearr))
 
             specfile = extract_dir + '/' + name + '.pha'
@@ -535,9 +538,9 @@ class EPICExtractor(object):
             if(len(pointings) > 0 and pointing not in pointings):
                 continue
 
-            srcnamearr = [self.obsdir, pointing, srckey, 'pn', specid]
+            srcnamearr = [self.obsdir, pointing, srckey, self.instrument, specid]
             srcname = '_'.join(filter(None, srcnamearr))
-            bkgnamearr = [self.obsdir, pointing, bkgkey, 'pn', specid]
+            bkgnamearr = [self.obsdir, pointing, bkgkey, self.instrument, specid]
             bkgname = '_'.join(filter(None, bkgnamearr))
 
             specfile = extract_dir + '/' + srcname + '.pha'
@@ -636,6 +639,35 @@ class EPICExtractor(object):
         filt = ["gti(%s,TIME)" % gti] + filter_terms
         self.get_spectrum(extract_dir, specid, grpmin, filt, pointings)
 
+    def get_ratecut_spectrum(self, ratemin=0, ratemax=0, timebin=10, extract_dir='', specid='', grpmin=20, gti_dir='', lccorr=True, makelc=True, filter_terms=[], pointings=[]):
+        #
+        # extract a spectrum accumulated from time intervals specified in a GTI file
+        #
+        if(extract_dir == ''):
+            extract_dir = self.specdir
+        if(specid == ''):
+            specid = 'rate%g-%g' % (ratemin, ratemax)
+        if (gti_dir == ''):
+            gti_dir = self.gtidir
+
+        for pointing in self.pointings:
+            if (len(pointings) > 0 and pointing not in pointings):
+                continue
+
+            self.make_gti(ratemin, ratemax, timebin, lcdir='', lcid='', lckey='src', lccorr=lccorr, makelc=makelc, pointings=[pointing])
+
+            ratestr = '%g-%g' % (ratemin, ratemax)
+            gtinamearr = [self.obsdir, pointing, 'src', self.instrument,
+                          'tbin' + str(timebin), 'rate' + ratestr, '']
+            gtiname = '_'.join(filter(None, gtinamearr))
+            gti = gti_dir + '/' + gtiname + '.gti'
+
+            if not os.path.exists(gti):
+                continue
+
+            filt = ["gti(%s,TIME)" % gti] + filter_terms
+            self.get_spectrum(extract_dir, specid, grpmin, filt, pointings=[pointing])
+
     #-- Lightcurve extraction routines ---------------------------------------
 
     def extract_lightcurve(self, timebin, regionkey, extract_dir='', lcid='', filter_terms=[], pointings=[]):
@@ -661,7 +693,7 @@ class EPICExtractor(object):
                 continue
 
             namearr = [self.obsdir, pointing, regionkey,
-                       'pn', 'tbin' + str(timebin), lcid]
+                       self.instrument, 'tbin' + str(timebin), lcid]
             name = '_'.join(filter(None, namearr))
 
             lcfile = extract_dir + '/' + name + '.lc'
@@ -701,10 +733,10 @@ class EPICExtractor(object):
                 continue
 
             srcnamearr = [self.obsdir, pointing, srckey,
-                          'pn', 'tbin' + str(timebin), lcid]
+                          self.instrument, 'tbin' + str(timebin), lcid]
             srcname = '_'.join(filter(None, srcnamearr))
             bkgnamearr = [self.obsdir, pointing, bkgkey,
-                          'pn', 'tbin' + str(timebin), lcid]
+                          self.instrument, 'tbin' + str(timebin), lcid]
             bkgname = '_'.join(filter(None, bkgnamearr))
 
             srclc = extract_dir + '/' + srcname + '.lc'
@@ -831,43 +863,68 @@ class EPICExtractor(object):
                     "(PI in [%d:%d])" % (enmin, enmax)] + filter_terms
             self.get_lightcurve(timebin, extract_dir, lcid, filt, [pointing])
 
-    def make_gti(self, rate, timebin, compare_operator='<', gti_dir='', extract_dir='', lcid='', lckey='bkg', pointings=[]):
+    def make_gti(self, ratemin=0, ratemax=0, timebin=10, gti_dir='', extract_dir='', lcdir='', lcid='', lckey='src', lccorr=False, makelc=True, pointings=[]):
 
         if(extract_dir == ''):
             extract_dir = self.lcdir
+        if(lcdir == ''):
+            lcdir = self.lcdir
         if(gti_dir == ''):
             gti_dir = self.gtidir
+
+        if not os.path.exists(gti_dir):
+            os.mkdir(gti_dir)
 
         for pointing, evl in zip(self.pointings, self.evls):
 
             if(len(pointings) > 0 and pointing not in pointing):
                 continue
 
+            if lccorr:
+                lcextn = '.lc_corr'
+            else:
+                lcextn = '.lc'
             lcnamearr = [self.obsdir, pointing, lckey,
-                         'pn', 'tbin' + str(timebin), lcid]
+                       self.instrument, 'tbin' + str(timebin), lcid]
             lcname = '_'.join(filter(None, lcnamearr))
-            lc = extract_dir + '/' + lcname + '.lc'
+            lc = lcdir + '/' + lcname + lcextn
 
-            gtinamearr = [self.obsid, pointing, lckey, 'pn',
-                          'tbin' + str(timebin), 'rate' + str(rate), lcid]
+            if os.path.exists(lc):
+                print("Using existing lightcurve %s" % lc)
+            elif makelc:
+                print("make_gti: Light curve %s does not exist - creating..." % lc)
+                if lccorr:
+                    lc = self.get_lightcurve(timebin, lcdir, lcid, pointings=[pointing])
+                else:
+                    lc = self.extract_lightcurve(timebin, lckey, lcdir, lcid, pointings=[pointing])
+            else:
+                continue
+
+            ratestr = '%g-%g' % (ratemin, ratemax)
+            gtinamearr = [self.obsdir, pointing, lckey, self.instrument,
+                          'tbin' + str(timebin), 'rate' + ratestr, lcid]
             gtiname = '_'.join(filter(None, gtinamearr))
             gti = gti_dir + '/' + gtiname + '.gti'
-
-            if(not os.path.exists(lc)):
-                print("make_gti ERROR: Could not find lightcurve from which to make GTI")
-                return
 
             if(os.path.exists(gti)):
                 os.remove(gti)
 
-            expr = '(RATE' + compare_operator + str(rate) + ')'
+            expr_terms = []
+            if ratemin > 0:
+                expr_terms.append('(RATE>=%g)' % ratemin)
+            if ratemax > 0:
+                expr_terms.append('(RATE<%g)' % ratemax)
+            expr = '&&'.join(expr_terms)
+
+            print("DEBUG::lc=%s" % lc )
+            print('table=%s:RATE' % lc)
 
             #
             # Argument array for Popen
             #
             args = ['tabgtigen',
-                    'table=' + lc + ':RATE',
-                    'gtiset=' + gti,
+                    'table=%s:RATE' % lc,
+                    'gtiset=%s' % gti,
                     'timecolumn=TIME',
                     'expression=' + expr]
 
@@ -1016,8 +1073,6 @@ class EPICExtractor(object):
             #
             proc = subprocess.Popen(args, env=self.envvars).wait()
 
-            return evlfile
-
     # -- Pile-up test ---------------------------------------------
 
     def epat_plot(self, epat_dir='', pointings=[], use_gti=True):
@@ -1055,10 +1110,18 @@ class EPICExtractor(object):
                 if not os.path.exists(gti):
                     raise AssertionError('Could not find flare removal GTI file')
 
-            src_evl = self.extract_event_list(regionkey='src', extract_dir=epat_dir, filter_terms=filt,
+            self.extract_event_list(regionkey='src', extract_dir=epat_dir, filter_terms=filt,
                                               pointings=[pointing], update_exposure=True, orig_evls=self.raw_evls)
-            bkg_evl = self.extract_event_list(regionkey='bkg', extract_dir=epat_dir, filter_terms=filt,
+            self.extract_event_list(regionkey='bkg', extract_dir=epat_dir, filter_terms=filt,
                                               pointings=[pointing], update_exposure=True, orig_evls=self.raw_evls)
+
+            srcnamearr = [self.obsdir, pointing, 'src', self.instrument, '']
+            srcname = '_'.join(filter(None, srcnamearr))
+            src_evl = epat_dir + '/' + srcname + '.evl'
+
+            bkgnamearr = [self.obsdir, pointing, 'bkg', self.instrument, '']
+            bkgname = '_'.join(filter(None, bkgnamearr))
+            bkg_evl = epat_dir + '/' + bkgname + '.evl'
 
             #
             # argument array for Popen

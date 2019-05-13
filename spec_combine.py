@@ -1,12 +1,15 @@
 import subprocess
-import pyfits
+try:
+    import astropy.io.fits as pyfits
+except:
+    import pyfits
 import numpy as np
 import glob
 
 from pyxmm.spec_util import *
 
 
-def CombineSpectra(srcfiles='*src*.pha', bkgfiles=None, rmffiles=None, arffiles=None, comb_spec='src_comb.pha', comb_bkg='bkg_comb.pha', comb_rmf='src_comb.rmf', comb_arf='src_comb.arf', comb_grp='src_comb.grp', grpmin=20, exposure_calc='sum'):
+def combine_spectra(srcfiles='*src*.pha', bkgfiles=None, rmffiles=None, arffiles=None, comb_spec='src_comb.pha', comb_bkg='bkg_comb.pha', comb_rmf='src_comb.rmf', comb_arf='src_comb.arf', comb_grp='src_comb.grp', grpmin=20, exposure_calc='sum'):
     src_list = sorted(glob.glob(srcfiles))
 
     # if we're not passed search expressions for background, RMF and ARF, try
@@ -36,7 +39,10 @@ def CombineSpectra(srcfiles='*src*.pha', bkgfiles=None, rmffiles=None, arffiles=
     for spec in src_list:
         f = pyfits.open(spec)
         hdr = f[1].header
-        src_exp.append( hdr['EXPOSURE'] )
+        try:
+            src_exp.append( hdr['EXPOSURE'] )
+        except:
+            src_exp.append(0.)
         f.close()
     sum_srcexp = np.sum(src_exp)
     weight = []
@@ -47,6 +53,7 @@ def CombineSpectra(srcfiles='*src*.pha', bkgfiles=None, rmffiles=None, arffiles=
     if comb_bkg is not None:
         sum_spec(bkg_list, comb_bkg, exposure_calc)
     if comb_rmf is not None:
+        print("combining rmf")
         combine_rmf(rmf_list, weight, comb_rmf)
     if comb_arf is not None:
         combine_arf(arf_list, weight, comb_arf)
@@ -87,7 +94,7 @@ def sum_spec(spec_list, comb_spec, exposure_calc='sum'):
             'areascal=%',
             'ncomments=0',
             'clobber=yes']
-    print ' '.join(args)
+    print(' '.join(args))
     subprocess.Popen(args).wait()
 
 
@@ -99,12 +106,18 @@ def combine_rmf(rmf_list, weights, comb_rmf):
     rmflist = ' '.join(rmf_list)
     weightlist = ' '.join(weightstr_list)
 
+    print("running addrmf")
+    print(rmf_list)
+    print(weights)
+
     args = ['addrmf',
             'list='+rmflist,
             'weights='+weightlist,
             'rmffile=!'+comb_rmf,
             'clobber=yes']
     subprocess.Popen(args).wait()
+
+    print(' '.join(args))
 
 
 def combine_arf(arf_list, weights, comb_arf):
