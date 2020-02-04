@@ -1,3 +1,6 @@
+import os
+import astropy.io.fits as pyfits
+
 class GTI(object):
     #
     # class to create GTI files for XMM-Newton observations
