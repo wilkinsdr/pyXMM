@@ -2,6 +2,8 @@ import os
 import glob
 import re
 
+from .epic_extractor import *
+
 def list_obsids():
     #
     # Return a list of the OBSIDs directories in the current location
@@ -19,3 +21,19 @@ def abbrev_obsid(files):
         for f in these_files:
             newname = f.replace(obsid, str(num))
             os.rename(f, newname)
+
+
+def get_spectra(instrument='pn'):
+    for o in list_obsids():
+        extractor = EPICExtractor(o, instrument=instrument)
+        extractor.get_spectrum()
+
+
+def get_lightcurves(tbin=100, instrument='pn', nogaps=False):
+    for o in list_obsids():
+        extractor = EPICExtractor(o, instrument=instrument)
+
+        if nogaps:
+            extractor.evls = extractor.filt_evls
+
+        extractor.get_lightcurve(tbin)
