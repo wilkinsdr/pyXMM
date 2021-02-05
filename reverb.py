@@ -15,7 +15,7 @@ lagfreq_bins = ([300,300,1000,1200,4000],
 
 
 def get_lc_for_lagen(tbin=10, enbins=lagen_bins, nogaps=False, lcdir='for_lagen'):
-    for o in list_obsids():
+    for obsid in list_obsids():
         print("Processing OBSID " + str(obsid) + "...")
 
         extractor = EPICExtractor(obsid)
@@ -31,7 +31,7 @@ def get_lc_for_lagen(tbin=10, enbins=lagen_bins, nogaps=False, lcdir='for_lagen'
 
 
 def get_lc_for_lagfreq(tbin=10, enbins=lagfreq_bins, nogaps=False, lcdir='for_lagfreq'):
-    for o in list_obsids():
+    for obsid in list_obsids():
         print("Processing OBSID " + str(obsid) + "...")
 
         extractor = EPICExtractor(obsid)

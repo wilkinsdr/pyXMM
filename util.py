@@ -24,14 +24,14 @@ def abbrev_obsid(files):
 
 
 def get_spectra(instrument='pn'):
-    for o in list_obsids():
-        extractor = EPICExtractor(o, instrument=instrument)
+    for obsid in list_obsids():
+        extractor = EPICExtractor(obsid, instrument=instrument)
         extractor.get_spectrum()
 
 
 def get_lightcurves(tbin=100, instrument='pn', nogaps=False):
-    for o in list_obsids():
-        extractor = EPICExtractor(o, instrument=instrument)
+    for obsid in list_obsids():
+        extractor = EPICExtractor(obsid, instrument=instrument)
 
         if nogaps:
             extractor.evls = extractor.filt_evls
