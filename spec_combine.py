@@ -9,7 +9,7 @@ import glob
 from pyxmm.spec_util import *
 
 
-def combine_spectra(srcfiles='*src*.pha', bkgfiles=None, rmffiles=None, arffiles=None, comb_spec='src_comb.pha', comb_bkg='bkg_comb.pha', comb_rmf='src_comb.rmf', comb_arf='src_comb.arf', comb_grp='src_comb.grp', grpmin=20, exposure_calc='sum'):
+def combine_spectra(srcfiles='*sr*.pha', bkgfiles=None, rmffiles=None, arffiles=None, comb_spec='src_comb.pha', comb_bkg='bkg_comb.pha', comb_rmf='src_comb.rmf', comb_arf='src_comb.arf', comb_grp='src_comb.grp', grpmin=20, exposure_calc='sum', nustar=False):
     src_list = sorted(glob.glob(srcfiles))
 
     # if we're not passed search expressions for background, RMF and ARF, try
@@ -17,7 +17,10 @@ def combine_spectra(srcfiles='*src*.pha', bkgfiles=None, rmffiles=None, arffiles
     if bkgfiles is None:
         bkg_list = []
         for src in src_list:
-            bkg_list.append( src.replace('src','bkg') )
+            if nustar:
+                bkg_list.append( src.replace('_sr','_bk') )
+            else:
+                bkg_list.append(src.replace('src', 'bkg'))
     else:
         bkg_list = sorted(glob.glob(bkgfiles))
     if rmffiles is None:
