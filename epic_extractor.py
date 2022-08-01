@@ -21,7 +21,7 @@ class EPICExtractor(object):
 
         self.instrument = instrument
 
-        if(instrument == self.instrument):
+        if(instrument == 'pn'):
             self.instdir = self.procdir + '/pn'
         elif(instrument == 'mos'):
             self.instdir = self.procdir + '/mos'
