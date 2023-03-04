@@ -1,5 +1,6 @@
 import os
 import astropy.io.fits as pyfits
+import numpy as np
 
 class GTI(object):
     #
@@ -111,3 +112,13 @@ class GTI(object):
         gtiext = self.gti_hdu()
         hdulist = pyfits.HDUList([prihdr, gtiext])
         hdulist.writeto(filename)
+
+    @staticmethod
+    def fromtxt(filename, **kwargs):
+        dat = np.genfromtxt(filename, **kwargs)
+        gti = GTI()
+        for start, stop in dat:
+            gti.add_row(start, stop)
+        return gti
+
+
