@@ -117,21 +117,7 @@ class EPICExtractor(object):
         self.evls = self.bkgfilt_evls
 
         # the region specification for each pointing/event list
-        self.regionfiles = []
-        for p in self.pointings:
-            this_region = glob.glob(self.regiondir + '/' + p + '_' + region_file)
-            if(len(this_region) == 1):
-                self.regionfiles.append(this_region[0])
-            else:
-                this_region = glob.glob(self.regiondir + '/' + region_file)
-                if(len(this_region) == 1):
-                    self.regionfiles.append(this_region[0])
-                else:
-                    print("WARNING: could not locate region file for " + p)
-                    self.regionfiles.append('')
-        self.regions = []
-        for r in self.regionfiles:
-            self.regions.append(self._getregions_sh(r))
+        self._get_regions(region_file)
 
         # and lastly, the start and stop times of each pointing/event list
         self.start_time = []
@@ -337,6 +323,22 @@ class EPICExtractor(object):
             proc = subprocess.Popen(args, env=self.envvars).wait()
 
     #-- Region lookup  -------------------------------------------------------
+    def _get_regions(self, region_file='regions.sh'):
+        self.regionfiles = []
+        for p in self.pointings:
+            this_region = glob.glob(self.regiondir + '/' + p + '_' + region_file)
+            if(len(this_region) == 1):
+                self.regionfiles.append(this_region[0])
+            else:
+                this_region = glob.glob(self.regiondir + '/' + region_file)
+                if(len(this_region) == 1):
+                    self.regionfiles.append(this_region[0])
+                else:
+                    print("WARNING: could not locate region file for " + p)
+                    self.regionfiles.append('')
+        self.regions = []
+        for r in self.regionfiles:
+            self.regions.append(self._getregions_sh(r))
 
     def _getregions_sh(self, regfile):
         #
@@ -358,6 +360,49 @@ class EPICExtractor(object):
         regions['bkg'] = m.groups(1)[0]
 
         return regions
+
+    def find_regions(self, region_size=None, bkg_region=None):
+        region_re = re.compile("SASCIRCLE: (\(X,Y\) in CIRCLE\(.*?\))")
+        region_coord_re = re.compile("CIRCLE\((.*?),(.*?),(.*?)\)")
+
+        if self.instrument == 'pn':
+            src_start = '(DETX, DETY) in CIRCLE(639, -769, 1200)'
+        else:
+            src_start = '(DETX, DETY) in CIRCLE(0, 0, 1500)'
+
+        if bkg_region is None and self.instrument=='pn':
+            bkg_region = '((DETX,DETY) IN circle(-1031.23,2151.2,700))'
+        elif bkg_region is None and self.instrument == 'mos':
+            bkg_region = '((DETX,DETY) IN circle(-3798,-4540.5,700))'
+
+        self.extract_image(extract_dir=self.regiondir)
+
+
+        for pointing in self.pointings:
+            namearr = [self.obsdir, pointing, self.instrument]
+            name = '_'.join(filter(None, namearr))
+            imagefile = self.regiondir + '/' + name + '.fits'
+
+            reg_output = subprocess.check_output(['eregionanalyse', 'imageset=%s' % imagefile,
+                                     'srcexp=%s' % src_start,
+                                     'backexp=%s' % bkg_region], env=self.envvars)
+
+            src_region = region_re.search(str(reg_output)).group(1)
+
+            print("found region: ", src_region)
+
+            if region_size is not None:
+                region_coord = region_coord_re.search(src_region)
+                x = float(region_coord.group(1))
+                y = float(region_coord.group(2))
+                r = float(region_coord.group(3))
+                src_region = "(X,Y) in CIRCLE(%g,%g,%g)" % (x, y, region_size)
+
+            with open(self.regiondir + "/%s_regions.sh" % pointing, 'w') as f:
+                f.write("SRCREGION='%s'\n" % src_region)
+                f.write("BKGREGION='%s'\n" % bkg_region)
+
+        self._get_regions()
 
     #-- Observation header data lookups --------------------------------------
 
@@ -670,7 +715,7 @@ class EPICExtractor(object):
 
     #-- Lightcurve extraction routines ---------------------------------------
 
-    def extract_lightcurve(self, timebin, regionkey, extract_dir='', lcid='', filter_terms=[], pointings=[]):
+    def extract_lightcurve(self, timebin, regionkey, extract_dir='', lcid='', filter_terms=[], pointings=[], skip_if_exists=True):
         #
         # extract a spectrum
         # uses the region specified by regionkey (usually 'src' or 'bkg'
@@ -698,8 +743,11 @@ class EPICExtractor(object):
 
             lcfile = extract_dir + '/' + name + '.lc'
 
-            if(os.path.exists(lcfile)):
-                os.remove(lcfile)
+            if os.path.exists(lcfile):
+                if skip_if_exists:
+                    continue
+                else:
+                    os.remove(lcfile)
 
             #
             # The SAS filter expression
@@ -722,7 +770,7 @@ class EPICExtractor(object):
             #
             proc = subprocess.Popen(args, env=self.envvars).wait()
 
-    def correct_lightcurve(self, timebin, extract_dir='', lcid='', srckey='src', bkgkey='bkg', pointings=[]):
+    def correct_lightcurve(self, timebin, extract_dir='', lcid='', srckey='src', bkgkey='bkg', pointings=[], skip_if_exists=True):
 
         if(extract_dir == ''):
             extract_dir = self.lcdir
@@ -751,8 +799,11 @@ class EPICExtractor(object):
                 print(
                     "correct_lightcurve WARNING: Background lightcurve could not be found")
 
-            if(os.path.exists(corrlc)):
-                os.remove(corrlc)
+            if os.path.exists(corrlc):
+                if skip_if_exists:
+                    continue
+                else:
+                    os.remove(corrlc)
 
             #
             # Argument array for Popen
@@ -775,7 +826,7 @@ class EPICExtractor(object):
             #
             proc = subprocess.Popen(args, env=self.envvars).wait()
 
-    def get_lightcurve(self, timebin, extract_dir='', lcid='', filter_terms=[], pointings=[]):
+    def get_lightcurve(self, timebin, extract_dir='', lcid='', filter_terms=[], pointings=[], skip_if_exists=True):
         #
         # automated extraction of a lightcurve
         # extract the source and background lightcurves then apply correction
@@ -784,12 +835,12 @@ class EPICExtractor(object):
             extract_dir = self.lcdir
 
         self.extract_lightcurve(timebin, 'src', extract_dir,
-                                lcid, filter_terms, pointings=pointings)
+                                lcid, filter_terms, pointings=pointings, skip_if_exists=skip_if_exists)
         self.extract_lightcurve(timebin, 'bkg', extract_dir,
-                                lcid, filter_terms, pointings=pointings)
-        self.correct_lightcurve(timebin, extract_dir, lcid, pointings=pointings)
+                                lcid, filter_terms, pointings=pointings, skip_if_exists=skip_if_exists)
+        self.correct_lightcurve(timebin, extract_dir, lcid, pointings=pointings, skip_if_exists=skip_if_exists)
 
-    def get_energy_lightcurve(self, enmin, enmax, timebin, extract_dir='', lcid='', filter_terms=[], pointings=[]):
+    def get_energy_lightcurve(self, enmin, enmax, timebin, extract_dir='', lcid='', filter_terms=[], pointings=[], skip_if_exists=True):
         #
         # extract the lightcurve in a specified energt range (in eV)
         #
@@ -800,7 +851,7 @@ class EPICExtractor(object):
 
         filt = ["(PI in [%d:%d])" % (enmin, enmax)] + filter_terms
         self.get_lightcurve(timebin, extract_dir, lcid,
-                            filt, pointings=pointings)
+                            filt, pointings=pointings, skip_if_exists=skip_if_exists)
 
     def get_time_lightcurve(self, tstart, tend, timebin, extract_dir='', lcid='', filter_terms=[], pointings=[], from_start=False)	:
         #
@@ -1022,6 +1073,7 @@ class EPICExtractor(object):
 
             filt = ["(TIME in [%d:%d])" % (tstart, tend)] + filter_terms
             self.extract_image(imageid=imageid, filter_terms=filt, pointings=[pointing], **kwargs)
+
 
     # -- Event list extraction routines ---------------------------------------
 
