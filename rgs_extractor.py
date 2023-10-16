@@ -1,3 +1,13 @@
+"""
+pyXMM RGS utilities
+
+Temproary instructions
+1) initialise RGSExtractor
+2) proc_rgs()
+3) filter()
+4) find_spectra()
+5) combine_spectra()
+"""
 import os
 import glob
 import re
@@ -13,13 +23,15 @@ class RGSExtractor(object):
     # class to extract data products from XMM-Newton EPIC pn observations
     #
 
-    def __init__(self, obsdir, run_reduction=False, bkgfilt=True):
+    def __init__(self, obsdir, run_reduction=False, bkgfilt=True, subdir=None):
         self.obsdir = obsdir
 
         self.odfdir = self.obsdir + '/odf'
         self.procdir = self.obsdir + '/proc'
 
         self.rgsdir = self.procdir + '/rgs'
+        if subdir is not None:
+            self.rgsdir += '/' + subdir
 
         self.cif = self.procdir + '/ccf.cif'
 
@@ -145,7 +157,7 @@ class RGSExtractor(object):
 
     #-- Event filtering ------------------------------------------------------
 
-    def filter(self, rate=0.2):
+    def filter(self, rate=0.2, time=None):
         #
         # run the RGS filters based on a GTI created from the background rate
         #
@@ -171,6 +183,10 @@ class RGSExtractor(object):
         proc = subprocess.Popen(args, env=self.envvars).wait()
 
         gtiexpr = '(RATE<%g)' % rate
+
+        if isinstance(time, tuple):
+            gtiexpr += '&&(TIME>=%g)&&(TIME<%g)' % time
+
         args = ['tabgtigen',
                 'table='+lcfile,
                 'gtiset='+gtifile,
@@ -251,31 +267,14 @@ def rgs_collect_spectra(dest='combined/rgs/spectra'):
         for f in x.rsp_o2:
             shutil.copy(f, dest)
 
-def rgs_combine_spectra(dir='combined/rgs/spectra'):
-    pha = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/*SRSPEC1001.FIT'))])
-    bkg = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/*BGSPEC1001.FIT'))])
-    rsp = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/*RSPMAT1001.FIT'))])
+def rgs_combine_spectra(dir='combined/rgs/spectra', prefix=''):
+    pha = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/P%s*SRSPEC1001.FIT' % prefix))])
+    bkg = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/P%s*BGSPEC1001.FIT' % prefix))])
+    rsp = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/P%s*RSPMAT1001.FIT' % prefix))])
 
-    comb_pha = "src_rgs_comb_o1.pha" % self.obsdir
-    comb_bkg = "bkg_rgs_comb_o1.pha" % self.obsdir
-    comb_rsp = "src_rgs_comb_o1.rsp" % self.obsdir
-
-    args = ['rgscombine',
-            'pha=' + pha,
-            'rmf=' + rsp,
-            'bkg=' + bkg,
-            'filepha=' + comb_pha,
-            'filermf=' + comb_rsp,
-            'filebkg=' + comb_bkg]
-    proc = subprocess.Popen(args, cwd=self.rgsdir, env=self.envvars).wait()
-
-    pha = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/*SRSPEC2001.FIT'))])
-    bkg = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/*BGSPEC2001.FIT'))])
-    rsp = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/*RSPMAT2001.FIT'))])
-
-    comb_pha = "src_rgs_comb_o2.pha" % self.obsdir
-    comb_bkg = "bkg_rgs_comb_o2.pha" % self.obsdir
-    comb_rsp = "src_rgs_comb_o2.rsp" % self.obsdir
+    comb_pha = "%ssrc_rgs_comb_o1.pha" % (prefix + '_' if prefix != '' else '')
+    comb_bkg = "%sbkg_rgs_comb_o1.pha" % (prefix + '_' if prefix != '' else '')
+    comb_rsp = "%ssrc_rgs_comb_o1.rsp" % (prefix + '_' if prefix != '' else '')
 
     args = ['rgscombine',
             'pha=' + pha,
@@ -284,4 +283,21 @@ def rgs_combine_spectra(dir='combined/rgs/spectra'):
             'filepha=' + comb_pha,
             'filermf=' + comb_rsp,
             'filebkg=' + comb_bkg]
-    proc = subprocess.Popen(args, cwd=self.rgsdir, env=self.envvars).wait()
+    proc = subprocess.Popen(args, cwd=dir).wait()
+
+    pha = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/P%s*SRSPEC2001.FIT' % prefix))])
+    bkg = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/P%s*BGSPEC2001.FIT' % prefix))])
+    rsp = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/P%s*RSPMAT2001.FIT' % prefix))])
+
+    comb_pha = "%ssrc_rgs_comb_o2.pha" % (prefix + '_' if prefix != '' else '')
+    comb_bkg = "%sbkg_rgs_comb_o2.pha" % (prefix + '_' if prefix != '' else '')
+    comb_rsp = "%ssrc_rgs_comb_o2.rsp" % (prefix + '_' if prefix != '' else '')
+
+    args = ['rgscombine',
+            'pha=' + pha,
+            'rmf=' + rsp,
+            'bkg=' + bkg,
+            'filepha=' + comb_pha,
+            'filermf=' + comb_rsp,
+            'filebkg=' + comb_bkg]
+    proc = subprocess.Popen(args, cwd=dir).wait()
