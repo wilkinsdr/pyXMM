@@ -24,9 +24,9 @@ def combine_spectra(srcfiles='*sr*.pha', bkgfiles=None, rmffiles=None, arffiles=
                 bkg_list.append( src.replace('_sr','_bk') )
             else:
                 bkg_list.append(src.replace('src', 'bkg'))
-    elif isinstrance(bkgfiles, str):
+    elif isinstance(bkgfiles, str):
         bkg_list = sorted(glob.glob(bkgfiles))
-    elif isinstrance(bkgfiles, list):
+    elif isinstance(bkgfiles, list):
         bkg_list = bkgfiles
     else:
         raise ValueError("bkgfiles is invalid")
