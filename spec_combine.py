@@ -10,7 +10,10 @@ from pyxmm.spec_util import *
 
 
 def combine_spectra(srcfiles='*sr*.pha', bkgfiles=None, rmffiles=None, arffiles=None, comb_spec='src_comb.pha', comb_bkg='bkg_comb.pha', comb_rmf='src_comb.rmf', comb_arf='src_comb.arf', comb_grp='src_comb.grp', grpmin=20, exposure_calc='sum', nustar=False):
-    src_list = sorted(glob.glob(srcfiles))
+    if isinstance(srcfiles, str):
+        src_list = sorted(glob.glob(srcfiles))
+    elif isinstance(srcfiles, list):
+        src_list = srcfiles
 
     # if we're not passed search expressions for background, RMF and ARF, try
     # to work them out by replacing bits of the filename
@@ -21,20 +24,34 @@ def combine_spectra(srcfiles='*sr*.pha', bkgfiles=None, rmffiles=None, arffiles=
                 bkg_list.append( src.replace('_sr','_bk') )
             else:
                 bkg_list.append(src.replace('src', 'bkg'))
-    else:
+    elif isinstrance(bkgfiles, str):
         bkg_list = sorted(glob.glob(bkgfiles))
+    elif isinstrance(bkgfiles, list):
+        bkg_list = bkgfiles
+    else:
+        raise ValueError("bkgfiles is invalid")
+
     if rmffiles is None:
         rmf_list = []
         for src in src_list:
             rmf_list.append( src.replace('.pha','.rmf') )
-    else:
+    elif isinstance(rmffiles, str):
         rmf_list = sorted(glob.glob(rmffiles))
+    elif isinstance(rmffiles, list):
+        rmf_list = rmffiles
+    else:
+        raise ValueError("rmffiles is invalid")
+
     if arffiles is None:
         arf_list = []
         for src in src_list:
             arf_list.append( src.replace('.pha','.arf') )
-    else:
+    elif isinstance(arffiles, str):
         arf_list = sorted(glob.glob(arffiles))
+    elif isinstance(arffiles, list):
+        arf_list = arffiles
+    else:
+        raise ValueError("arffiles is invalid")
 
     # the weighting of each RMF and ARF in the combined files is equal to the
     # fraction of the total exposure in the corresponding spectrum
