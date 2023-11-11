@@ -13,7 +13,7 @@ class EPICExtractor(object):
     # class to extract data products from XMM-Newton EPIC pn observations
     #
 
-    def __init__(self, obsdir, instrument='pn', region_file='regions.sh', run_reduction=False, bkgfilt=True):
+    def __init__(self, obsdir, instrument='pn', region_file='regions.sh', run_reduction=False, bkgfilt=True, pileup_corr=False, ccdnr=4):
         self.obsdir = obsdir
 
         self.odfdir = self.obsdir + '/odf'
@@ -33,6 +33,13 @@ class EPICExtractor(object):
         self.imagedir = self.instdir + '/images'
         self.epatdir = self.instdir + '/epat'
         self.gtidir = self.instdir + '/gti'
+        
+        if pileup_corr:
+            self.evlsdir += '_pileupcorr'
+            self.specdir += '_pileupcorr'
+
+        self.pileup_corr = pileup_corr
+        self.ccdnr = ccdnr
 
         self.cif = self.procdir + '/ccf.cif'
 
@@ -65,56 +72,7 @@ class EPICExtractor(object):
             else:
                 raise AssertionError("odfingest has not been run on OBSID " + obsdir)
 
-        self.raw_evls = sorted(glob.glob(self.evlsdir + '/*Evts.ds'))
-        self.filt_evls = sorted(glob.glob(self.evlsdir + '/*filtered.evl'))
-        self.bkgfilt_evls = sorted(glob.glob(self.evlsdir + '/*filtered?gti.evl'))
-        # read off the section of the filename that identifies the instrument and pointing
-        # we do this from the filtered list first in case any have been disabled by renaming the files
-        if (len(self.bkgfilt_evls) > 0):
-            self.pointings = [re.search('(E[A-Z]+[0-9]_)*[A-Z][0-9]{3}', f).group(0) for f in self.bkgfilt_evls]
-        else:
-            self.pointings = [re.search('(E[A-Z]+[0-9]_)*[A-Z][0-9]{3}', f).group(0) for f in self.raw_evls]
-        if(len(self.bkgfilt_evls)<1):
-            # if we dont' have filtered event lists, see what we do have and build
-            # them if necessary
-            if(len(self.raw_evls) < 1):
-                if run_reduction:
-                    if not os.path.exists(self.instdir):
-                        os.mkdir(self.instdir)
-                    if not os.path.exists(self.evlsdir):
-                        os.mkdir(self.evlsdir)
-                    self.ProcEVL()
-                    if not os.path.exists(self.regiondir):
-                        os.mkdir(self.regiondir)
-                    # read off the section of the new filenames that identifies the instrument and pointing
-                    self.raw_evls = sorted(glob.glob(self.evlsdir + '/*Evts.ds'))
-                    self.pointings = [re.search('(E[A-Z]+[0-9]_)*[A-Z][0-9]{3}', f).group(0) for f in sorted(glob.glob(self.evlsdir + '/*Evts.ds'))]
-                else:
-                    raise AssertionError("Event lists have not been reduced for OBSID " + obsdir)
-            else:
-                self.evls = self.raw_evls
-            # and the first stange filtered event lists, before background flare removal
-            if(len(self.filt_evls) < 1):
-                if run_reduction:
-                    self.filter_evl()
-                    self.filt_evls = sorted(glob.glob(self.evlsdir + '/*filtered.evl'))
-                else:
-                    print("WARNING: Event lists have not been filtered for OBSID " + obsdir)
-            else:
-                self.evls = self.filt_evls
-
-            if bkgfilt:
-                if(len(self.bkgfilt_evls) < 1):
-                    if run_reduction:
-                        self.remove_bkg_flares()
-                        self.bkgfilt_evls = sorted(glob.glob(self.evlsdir + '/*filtered?gti.evl'))
-                    else:
-                        print("WARNING: Background flaring intervals have not been removed for OBSID " + obsdir)
-                else:
-                    self.evls = self.bkgfilt_evls
-
-        # use the GTI filtered event lists as the default set for product extraction
-        self.evls = self.bkgfilt_evls
+        self.get_evls(bkgfilt=bkgfilt, run_reduction=run_reduction, pileupcorr=pileup_corr)
 
         # the region specification for each pointing/event list
         self._get_regions(region_file)
@@ -209,13 +167,74 @@ class EPICExtractor(object):
         #
         proc = subprocess.Popen(args, env=self.envvars).wait()
 
+    #-- Find event lists and reduce/filter them if necessary -----------------
+    def get_evls(self, bkgfilt=True, run_reduction=False, pileupcorr=False):
+        # first check if event lists exusr
+        self.unfilt_evls = sorted(glob.glob(self.evlsdir + '/*ImagingEvts.ds'))
+        self.filt_evls = sorted(glob.glob(self.evlsdir + '/*filtered.evl'))
+        self.bkgfilt_evls = sorted(glob.glob(self.evlsdir + '/*filtered?gti.evl'))
+        self.raw_evls = sorted(glob.glob(self.evlsdir + '/*PileupEvts.ds'))
+
+        # read off the section of the filename that identifies the instrument and pointing
+        # we do this from the filtered list first in case any have been disabled by renaming the files
+        if (len(self.bkgfilt_evls) > 0):
+            self.pointings = [re.search('(E[A-Z]+[0-9]_)*[A-Z][0-9]{3}', f).group(0) for f in self.bkgfilt_evls]
+        else:
+            self.pointings = [re.search('(E[A-Z]+[0-9]_)*[A-Z][0-9]{3}', f).group(0) for f in self.unfilt_evls]
+
+        if (len(self.bkgfilt_evls) < 1):
+            # if we dont' have filtered event lists, see what we do have and build
+            # them if necessary
+            if (len(self.unfilt_evls) < 1):
+                if run_reduction:
+                    if not os.path.exists(self.instdir):
+                        os.mkdir(self.instdir)
+                    if not os.path.exists(self.evlsdir):
+                        os.mkdir(self.evlsdir)
+                    self.proc_evl(pileupcorr=pileupcorr)
+                    if not os.path.exists(self.regiondir):
+                        os.mkdir(self.regiondir)
+                    # read off the section of the new filenames that identifies the instrument and pointing
+                    self.unfilt_evls = sorted(glob.glob(self.evlsdir + '/*ImagingEvts.ds'))
+                    self.raw_evls = sorted(glob.glob(self.evlsdir + '/*PileupEvts.ds'))
+                    self.pointings = [re.search('(E[A-Z]+[0-9]_)*[A-Z][0-9]{3}', f).group(0) for f in
+                                      sorted(glob.glob(self.evlsdir + '/*ImagingEvts.ds'))]
+                else:
+                    raise AssertionError("Event lists have not been reduced for OBSID " + obsdir)
+            else:
+                self.evls = self.unfilt_evls
+            # and the first stange filtered event lists, before background flare removal
+            if (len(self.filt_evls) < 1):
+                if run_reduction:
+                    self.filter_evl()
+                    self.filt_evls = sorted(glob.glob(self.evlsdir + '/*filtered.evl'))
+                else:
+                    print("WARNING: Event lists have not been filtered for OBSID " + obsdir)
+            else:
+                self.evls = self.filt_evls
+
+            if bkgfilt:
+                if (len(self.bkgfilt_evls) < 1):
+                    if run_reduction:
+                        self.remove_bkg_flares()
+                        self.bkgfilt_evls = sorted(glob.glob(self.evlsdir + '/*filtered?gti.evl'))
+                    else:
+                        print("WARNING: Background flaring intervals have not been removed for OBSID " + obsdir)
+                else:
+                    self.evls = self.bkgfilt_evls
+
+        # use the GTI filtered event lists as the default set for product extraction
+        self.evls = self.bkgfilt_evls
+
     #-- EPIC pipeline reduction ----------------------------------------------
 
-    def ProcEVL(self):
+    def proc_evl(self, pileupcorr=False):
         if self.instrument == 'mos':
             args = ['emproc']
-        elif self.instrument == self.instrument:
+        elif self.instrument == 'pn':
             args = ['epproc']
+            if pileupcorr:
+                args += ['pileuptempfile=yes', 'runepxrlcorr=yes']
 
         print("Running %s to produce event lists..." % args[0])
 
@@ -236,7 +255,7 @@ class EPICExtractor(object):
             filt = ['(PATTERN<=4)','(PI in [200:15000])','(FLAG==0)','#XMMEA_EP'] + filter_terms
         expr = '&&'.join(filt)
 
-        for pointing, evl in zip(self.pointings, self.raw_evls):
+        for pointing, evl in zip(self.pointings, self.unfilt_evls):
             namearr = [self.obsdir, pointing, 'filtered']
             filt_evl_name = '_'.join(namearr) + '.evl'
             filt_evl = self.evlsdir + '/' + filt_evl_name
@@ -362,6 +381,12 @@ class EPICExtractor(object):
         return regions
 
     def find_regions(self, region_size=None, bkg_region=None):
+        #
+        # try to find the optimal point source extraction region
+        # if region_size is not specified, will use the optimal size found by eregionanalyse
+        #
+        # the regions are saved into the region files and will be automatically loaded next time
+        #
         region_re = re.compile("SASCIRCLE: (\(X,Y\) in CIRCLE\(.*?\))")
         region_coord_re = re.compile("CIRCLE\((.*?),(.*?),(.*?)\)")
 
@@ -403,6 +428,19 @@ class EPICExtractor(object):
                 f.write("BKGREGION='%s'\n" % bkg_region)
 
         self._get_regions()
+
+    def excise_psf(self, radius=25):
+        #
+        # excise the core of the PSF from the source extraction region
+        # specify radius in arcsec
+        #
+        # region change is temporary and not saved in the region files
+        #
+        pix_radius = radius / 0.05
+        region_re = re.compile("circle\(([0-9\.]+),([0-9\.]+),([0-9\.]+)\)")
+
+        for pointing_reg in self.regions:
+            pointing_reg['src'] = region_re.sub(r"annulus(\1,\2,%g,\3)" % pix_radius, pointing_reg['src'])
 
     #-- Observation header data lookups --------------------------------------
 
@@ -524,6 +562,10 @@ class EPICExtractor(object):
             args = ['rmfgen',
                     'rmfset=' + rmffile,
                     'spectrumset=' + specfile]
+
+            if self.pileup_corr:
+                raw_evl = [evl for evl in self.raw_evls if '%s_%02d' % (pointing,self.ccdnr) in evl][0]
+                args += ['correctforpileup=yes', 'raweventfile=%s' % raw_evl]
             #
             # and execute it
             #
@@ -1163,9 +1205,9 @@ class EPICExtractor(object):
                     raise AssertionError('Could not find flare removal GTI file')
 
             self.extract_event_list(regionkey='src', extract_dir=epat_dir, filter_terms=filt,
-                                              pointings=[pointing], update_exposure=True, orig_evls=self.raw_evls)
+                                              pointings=[pointing], update_exposure=True, orig_evls=self.unfilt_evls)
             self.extract_event_list(regionkey='bkg', extract_dir=epat_dir, filter_terms=filt,
-                                              pointings=[pointing], update_exposure=True, orig_evls=self.raw_evls)
+                                              pointings=[pointing], update_exposure=True, orig_evls=self.unfilt_evls)
 
             srcnamearr = [self.obsdir, pointing, 'src', self.instrument, '']
             srcname = '_'.join(filter(None, srcnamearr))
