@@ -387,8 +387,8 @@ class EPICExtractor(object):
         #
         # the regions are saved into the region files and will be automatically loaded next time
         #
-        region_re = re.compile("SASCIRCLE: (\(X,Y\) in CIRCLE\(.*?\))")
-        region_coord_re = re.compile("CIRCLE\((.*?),(.*?),(.*?)\)")
+        region_re = re.compile(r"SASCIRCLE: (\(X,Y\) in CIRCLE\(.*?\))")
+        region_coord_re = re.compile(r"CIRCLE\((.*?),(.*?),(.*?)\)")
 
         if self.instrument == 'pn':
             src_start = '(DETX, DETY) in CIRCLE(639, -769, 1200)'
@@ -437,7 +437,7 @@ class EPICExtractor(object):
         # region change is temporary and not saved in the region files
         #
         pix_radius = radius / 0.05
-        region_re = re.compile("circle\(([0-9\.]+),([0-9\.]+),([0-9\.]+)\)")
+        region_re = re.compile(r"circle\(([0-9\.]+),([0-9\.]+),([0-9\.]+)\)")
 
         for pointing_reg in self.regions:
             pointing_reg['src'] = region_re.sub(r"annulus(\1,\2,%g,\3)" % pix_radius, pointing_reg['src'])
