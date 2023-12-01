@@ -69,18 +69,19 @@ class RGSExtractor(object):
 
         self.find_files()
         if len(self.evls) == 0:
-            print("RGS event lists not found. Have you run proc_rgs()?")
+            if run_reduction:
+                self.proc_rgs()
+                if bkg_filt:
+                    self.filter(rate=bkg_rate)
+                self.find_spectra()
+                self.combine_spectra()
+            else:
+                print("RGS event lists not found. Have you run proc_rgs()?")
         if len(self.src_lists) == 0:
             print("RGS source lists not found. Have you run proc_rgs()?")
 
         self.find_spectra()
 
-        if len(self.src_spectra_o1) == 0 and run_reduction:
-            self.proc_rgs()
-            if bkg_filt:
-                self.filter(rate=bkg_rate)
-            self.find_spectra()
-            self.combine_spectra()
 
     #-- Observation status checks --------------------------------------------
 
