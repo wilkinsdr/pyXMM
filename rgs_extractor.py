@@ -71,7 +71,7 @@ class RGSExtractor(object):
         if len(self.evls) == 0:
             if run_reduction:
                 self.proc_rgs()
-                if bkg_filt:
+                if bkgfilt:
                     self.filter(rate=bkg_rate)
                 self.find_spectra()
                 self.combine_spectra()
