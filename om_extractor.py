@@ -165,8 +165,8 @@ class OMExtractor(object):
 
         lclist = []
 
-        for filter in set(self.lcfilters):
-            for lcfile in [lcfile for lcfile, lcfilter in zip(self.lcfiles, self.lcfilters) if lcfilter == filter]:
+        for om_filter in set(self.lcfilters):
+            for lcfile in [lcfile for lcfile, lcfilter in zip(self.lcfiles, self.lcfilters) if lcfilter == om_filter]:
                 with pyfits.open(lcfile) as f:
                     if om_filter is not None and f[0].header['FILTER'] != om_filter:
                         continue
@@ -181,7 +181,7 @@ class OMExtractor(object):
 
             lc = LightCurve().concatenate(lclist)
 
-            namearr = [self.obsdir, 'om', filter]
+            namearr = [self.obsdir, 'om', om_filter]
             name = '_'.join(filter(None, namearr))
             outfile = self.omdir + '/' + name + '.lc'
             lc.write_fits(outfile)
