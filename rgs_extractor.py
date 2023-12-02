@@ -275,7 +275,7 @@ def rgs_collect_spectra(dest='combined/rgs/spectra'):
         for f in x.rsp_o2:
             shutil.copy(f, dest)
 
-def rgs_combine_spectra(dir='combined/rgs/spectra', prefix='', group=True):
+def rgs_combine_spectra(dir='combined/rgs/spectra', prefix='', group=False):
     pha = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/P%s*SRSPEC1001.FIT' % prefix))])
     bkg = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/P%s*BGSPEC1001.FIT' % prefix))])
     rsp = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/P%s*RSPMAT1001.FIT' % prefix))])
@@ -320,6 +320,43 @@ def rgs_combine_spectra(dir='combined/rgs/spectra', prefix='', group=True):
             'filermf=' + comb_rsp,
             'filebkg=' + comb_bkg]
     proc = subprocess.Popen(args, cwd=dir).wait()
+
+    if group:
+        args = ['ftgrouppha',
+                comb_pha,
+                'backfile=' + comb_bkg,
+                'outfile=' + comb_grp,
+                'grouptype=opt',
+                'respfile=' + comb_rsp]
+        proc = subprocess.Popen(args, cwd=dir).wait()
+
+def rgs_group_combined(dir='combined/rgs/spectra', prefix=''):
+    pha = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/P%s*SRSPEC1001.FIT' % prefix))])
+    bkg = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/P%s*BGSPEC1001.FIT' % prefix))])
+    rsp = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/P%s*RSPMAT1001.FIT' % prefix))])
+
+    comb_pha = "%ssrc_rgs_comb_o1.pha" % (prefix + '_' if prefix != '' else '')
+    comb_bkg = "%sbkg_rgs_comb_o1.pha" % (prefix + '_' if prefix != '' else '')
+    comb_rsp = "%ssrc_rgs_comb_o1.rsp" % (prefix + '_' if prefix != '' else '')
+    comb_grp = "%ssrc_rgs_comb_o1.grp" % (prefix + '_' if prefix != '' else '')
+
+    if group:
+        args = ['ftgrouppha',
+                comb_pha,
+                'backfile=' + comb_bkg,
+                'outfile=' + comb_grp,
+                'grouptype=opt',
+                'respfile=' + comb_rsp]
+        proc = subprocess.Popen(args, cwd=dir).wait()
+
+    pha = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/P%s*SRSPEC2001.FIT' % prefix))])
+    bkg = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/P%s*BGSPEC2001.FIT' % prefix))])
+    rsp = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/P%s*RSPMAT2001.FIT' % prefix))])
+
+    comb_pha = "%ssrc_rgs_comb_o2.pha" % (prefix + '_' if prefix != '' else '')
+    comb_bkg = "%sbkg_rgs_comb_o2.pha" % (prefix + '_' if prefix != '' else '')
+    comb_rsp = "%ssrc_rgs_comb_o2.rsp" % (prefix + '_' if prefix != '' else '')
+    comb_grp = "%ssrc_rgs_comb_o2.grp" % (prefix + '_' if prefix != '' else '')
 
     if group:
         args = ['ftgrouppha',
