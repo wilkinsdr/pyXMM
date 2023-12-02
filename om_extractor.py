@@ -17,7 +17,7 @@ class OMExtractor(object):
     # class to extract data products from XMM-Newton EPIC pn observations
     #
 
-    def __init__(self, obsdir, run_reduction=False, bkgfilt=True, subdir=None, mode='image'):
+    def __init__(self, obsdir, run_reduction=False, subdir=None, mode='image'):
         self.obsdir = obsdir
 
         self.odfdir = self.obsdir + '/odf'
@@ -65,6 +65,7 @@ class OMExtractor(object):
             self.proc_om(mode)
 
         self.find_files()
+        self.get_filters()
 
     #-- Observation status checks --------------------------------------------
 
@@ -143,33 +144,45 @@ class OMExtractor(object):
         proc = subprocess.Popen(args, cwd=self.omdir, env=self.envvars).wait()
 
         self.find_files()
+        self.get_filters()
 
     def find_files(self):
         self.lcfiles = sorted(glob.glob(self.omdir + '/*TIMESR*.FIT'))
 
-    def concatenate_lc(self, om_filter=None, rebin=None, outfile=None):
+    def get_filters(self):
+        def get_lc_filter(lcfile):
+            with pyfits.open(lcfile) as f:
+                try:
+                    filter = f[0].header['FILTER']
+                except
+                    filter = None
+            return filter
+
+        self.lcfilters = [get_lc_filter(lc) for lc in self.lcfiles]
+
+    def concatenate_lc(self, om_filter=None, rebin=None):
         from pylag.lightcurve import LightCurve
 
         lclist = []
 
-        for lcfile in self.lcfiles:
-            with pyfits.open(lcfile) as f:
-                if om_filter is not None and f[0].header['FILTER'] != om_filter:
-                    continue
-                t = np.array(f['RATE'].data['TIME'])
-                r = np.array(f['RATE'].data['RATE'])
-                e = np.array(f['RATE'].data['ERROR'])
+        for filter in set(self.lcfilters):
+            for lcfile in [lcfile for lcfile, lcfilter in zip(self.lcfiles, self.lcfilters) if lcfilter == filter]:
+                with pyfits.open(lcfile) as f:
+                    if om_filter is not None and f[0].header['FILTER'] != om_filter:
+                        continue
+                    t = np.array(f['RATE'].data['TIME'])
+                    r = np.array(f['RATE'].data['RATE'])
+                    e = np.array(f['RATE'].data['ERROR'])
 
-            this_lc = LightCurve(t=t, r=r, e=e)
-            if rebin is not None:
-                this_lc = this_lc.rebin(rebin)
-            lclist.append(this_lc)
+                this_lc = LightCurve(t=t, r=r, e=e)
+                if rebin is not None:
+                    this_lc = this_lc.rebin(rebin)
+                lclist.append(this_lc)
 
-        lc = LightCurve().concatenate(lclist)
+            lc = LightCurve().concatenate(lclist)
 
-        if outfile is None:
-            namearr = [self.obsdir, 'om', om_filter]
+            namearr = [self.obsdir, 'om', filter]
             name = '_'.join(filter(None, namearr))
             outfile = self.omdir + '/' + name + '.lc'
-        lc.write_fits(outfile)
+            lc.write_fits(outfile)
 
