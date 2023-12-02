@@ -154,7 +154,7 @@ class OMExtractor(object):
             with pyfits.open(lcfile) as f:
                 try:
                     filter = f[0].header['FILTER']
-                except
+                except:
                     filter = None
             return filter
 
