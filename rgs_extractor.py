@@ -340,14 +340,13 @@ def rgs_group_combined(dir='combined/rgs/spectra', prefix=''):
     comb_rsp = "%ssrc_rgs_comb_o1.rsp" % (prefix + '_' if prefix != '' else '')
     comb_grp = "%ssrc_rgs_comb_o1.grp" % (prefix + '_' if prefix != '' else '')
 
-    if group:
-        args = ['ftgrouppha',
-                comb_pha,
-                'backfile=' + comb_bkg,
-                'outfile=' + comb_grp,
-                'grouptype=opt',
-                'respfile=' + comb_rsp]
-        proc = subprocess.Popen(args, cwd=dir).wait()
+    args = ['ftgrouppha',
+            comb_pha,
+            'backfile=' + comb_bkg,
+            'outfile=' + comb_grp,
+            'grouptype=opt',
+            'respfile=' + comb_rsp]
+    proc = subprocess.Popen(args, cwd=dir).wait()
 
     pha = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/P%s*SRSPEC2001.FIT' % prefix))])
     bkg = " ".join([os.path.basename(s) for s in sorted(glob.glob(dir + '/P%s*BGSPEC2001.FIT' % prefix))])
@@ -358,12 +357,11 @@ def rgs_group_combined(dir='combined/rgs/spectra', prefix=''):
     comb_rsp = "%ssrc_rgs_comb_o2.rsp" % (prefix + '_' if prefix != '' else '')
     comb_grp = "%ssrc_rgs_comb_o2.grp" % (prefix + '_' if prefix != '' else '')
 
-    if group:
-        args = ['ftgrouppha',
-                comb_pha,
-                'backfile=' + comb_bkg,
-                'outfile=' + comb_grp,
-                'grouptype=opt',
-                'respfile=' + comb_rsp]
-        proc = subprocess.Popen(args, cwd=dir).wait()
+    args = ['ftgrouppha',
+            comb_pha,
+            'backfile=' + comb_bkg,
+            'outfile=' + comb_grp,
+            'grouptype=opt',
+            'respfile=' + comb_rsp]
+    proc = subprocess.Popen(args, cwd=dir).wait()
 
