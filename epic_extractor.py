@@ -1026,6 +1026,29 @@ class EPICExtractor(object):
             #
             proc = subprocess.Popen(args, env=self.envvars).wait()
 
+    #-- Batch light curve generation ------------------------------------
+    def batch_energy_lightcurve(self, tbin=10, en0=300, enmax=10000, Nen=10, enbins=None, subdir='energy'):
+        if enbins is None:
+            enbins = np.round(np.logspace(np.log10(en0), np.log10(enmax), Nen)).astype(int)
+        elif enbins == 'lagen':
+            enbins = [300,400,500,600,800,1000,1300,1600,2000,2500,3000,4000,5000,7000,10000]
+        elif enbins == 'lagen_coarse':
+            enbins = [300,400,500,600,800,1000,1300,1600,2000,2500,3000,4000,5000,7000]
+        elif enbins == 'lagfreq':
+            enbins = ([300,300,1000,1200,4000], [800,1000,4000,4000,7000])
+
+        if isinstance(enbins, tuple):
+            enstart = enbins[0]
+            enend = enbins[1]
+        else:
+            enstart = enbins[:-1]
+            enend = enbins[1:]
+
+        extract_dir = self.lcdir + '/' + subdir
+
+        for s, e in zip(enstart, enend):
+            self.get_energy_lightcurve(s, e, tbin, extract_dir)
+
     #-- Image extraction routines ---------------------------------------
 
     def extract_image(self, regionkey=None, extract_dir='', imageid='', filter_terms=[], pointings=[], raimagecenter=None, decimagecenter=None):
@@ -1242,3 +1265,4 @@ class EPICExtractor(object):
             # and execute it
             #
             proc = subprocess.Popen(args, env=self.envvars).wait()
+
