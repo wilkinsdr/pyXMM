@@ -7,6 +7,7 @@ try:
     import astropy.io.fits as pyfits
 except:
     import pyfits
+import numpy as np
 
 class EPICExtractor(object):
     #
