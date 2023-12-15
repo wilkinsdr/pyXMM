@@ -209,11 +209,8 @@ class EPICExtractor(object):
                 if run_reduction:
                     self.filter_evl()
                     self.filt_evls = sorted(glob.glob(self.evlsdir + '/*filtered.evl'))
-                    self.evls = self.filt_evls
                 else:
                     print("WARNING: Event lists have not been filtered for OBSID " + obsdir)
-            else:
-                self.evls = self.filt_evls
 
             if bkgfilt:
                 if (len(self.bkgfilt_evls) < 1):
@@ -223,8 +220,8 @@ class EPICExtractor(object):
                         self.evls = self.bkgfilt_evls
                     else:
                         print("WARNING: Background flaring intervals have not been removed for OBSID " + obsdir)
-                else:
-                    self.evls = self.bkgfilt_evls
+
+        self.evls = self.bkgfilt_evls if bkgfilt else self.filt_evls
 
 
     #-- EPIC pipeline reduction ----------------------------------------------
