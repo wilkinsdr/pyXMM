@@ -209,6 +209,7 @@ class EPICExtractor(object):
                 if run_reduction:
                     self.filter_evl()
                     self.filt_evls = sorted(glob.glob(self.evlsdir + '/*filtered.evl'))
+                    self.evls = self.filt_evls
                 else:
                     print("WARNING: Event lists have not been filtered for OBSID " + obsdir)
             else:
@@ -219,13 +220,12 @@ class EPICExtractor(object):
                     if run_reduction:
                         self.remove_bkg_flares()
                         self.bkgfilt_evls = sorted(glob.glob(self.evlsdir + '/*filtered?gti.evl'))
+                        self.evls = self.bkgfilt_evls
                     else:
                         print("WARNING: Background flaring intervals have not been removed for OBSID " + obsdir)
                 else:
                     self.evls = self.bkgfilt_evls
 
-        # use the GTI filtered event lists as the default set for product extraction
-        self.evls = self.bkgfilt_evls
 
     #-- EPIC pipeline reduction ----------------------------------------------
 
