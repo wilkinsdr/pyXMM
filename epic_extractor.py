@@ -841,6 +841,7 @@ class EPICExtractor(object):
 
             if os.path.exists(corrlc):
                 if skip_if_exists:
+                    print(corrlc, "exists, skipping")
                     continue
                 else:
                     os.remove(corrlc)
@@ -1025,7 +1026,7 @@ class EPICExtractor(object):
             proc = subprocess.Popen(args, env=self.envvars).wait()
 
     #-- Batch light curve generation ------------------------------------
-    def batch_energy_lightcurve(self, tbin=10, en0=300, enmax=10000, Nen=10, enbins=None, subdir='energy'):
+    def batch_energy_lightcurve(self, tbin=10, en0=300, enmax=10000, Nen=10, enbins=None, subdir='energy', **kwargs):
         if enbins is None:
             enbins = np.round(np.logspace(np.log10(en0), np.log10(enmax), Nen)).astype(int)
         elif enbins == 'lagen':
@@ -1045,7 +1046,7 @@ class EPICExtractor(object):
         extract_dir = self.lcdir + '/' + subdir
 
         for s, e in zip(enstart, enend):
-            self.get_energy_lightcurve(s, e, tbin, extract_dir)
+            self.get_energy_lightcurve(s, e, tbin, extract_dir, **kwargs)
 
     #-- Image extraction routines ---------------------------------------
 
