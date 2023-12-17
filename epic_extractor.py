@@ -810,7 +810,7 @@ class EPICExtractor(object):
             #
             proc = subprocess.Popen(args, env=self.envvars).wait()
 
-    def correct_lightcurve(self, timebin, extract_dir='', lcid='', srckey='src', bkgkey='bkg', pointings=[], skip_if_exists=True):
+    def correct_lightcurve(self, timebin, extract_dir='', lcid='', srckey='src', bkgkey='bkg', pointings=[], skip_if_exists=True, subtract_bkg=True):
 
         if(extract_dir == ''):
             extract_dir = self.lcdir
@@ -854,7 +854,7 @@ class EPICExtractor(object):
                     'outset=' + corrlc,
                     'applyabsolutecorrections=yes']
 
-            if(bkgkey != None and bkgkey != '' and os.path.exists(bkglc)):
+            if(subract_bkg and bkgkey != None and bkgkey != '' and os.path.exists(bkglc)):
                 args.append('withbkgset=yes')
                 args.append('bkgtslist=' + bkglc)
             else:
@@ -866,7 +866,7 @@ class EPICExtractor(object):
             #
             proc = subprocess.Popen(args, env=self.envvars).wait()
 
-    def get_lightcurve(self, timebin, extract_dir='', lcid='', filter_terms=[], pointings=[], skip_if_exists=True):
+    def get_lightcurve(self, timebin, extract_dir='', lcid='', filter_terms=[], pointings=[], skip_if_exists=True, subtract_bkg=True):
         #
         # automated extraction of a lightcurve
         # extract the source and background lightcurves then apply correction
@@ -878,9 +878,9 @@ class EPICExtractor(object):
                                 lcid, filter_terms, pointings=pointings, skip_if_exists=skip_if_exists)
         self.extract_lightcurve(timebin, 'bkg', extract_dir,
                                 lcid, filter_terms, pointings=pointings, skip_if_exists=skip_if_exists)
-        self.correct_lightcurve(timebin, extract_dir, lcid, pointings=pointings, skip_if_exists=skip_if_exists)
+        self.correct_lightcurve(timebin, extract_dir, lcid, pointings=pointings, skip_if_exists=skip_if_exists, subtract_bkg=subtract_bkg)
 
-    def get_energy_lightcurve(self, enmin, enmax, timebin, extract_dir='', lcid='', filter_terms=[], pointings=[], skip_if_exists=True):
+    def get_energy_lightcurve(self, enmin, enmax, timebin, extract_dir='', lcid='', filter_terms=[], pointings=[], skip_if_exists=True, subtract_bkg=True):
         #
         # extract the lightcurve in a specified energt range (in eV)
         #
@@ -891,9 +891,9 @@ class EPICExtractor(object):
 
         filt = ["(PI in [%d:%d])" % (enmin, enmax)] + filter_terms
         self.get_lightcurve(timebin, extract_dir, lcid,
-                            filt, pointings=pointings, skip_if_exists=skip_if_exists)
+                            filt, pointings=pointings, skip_if_exists=skip_if_exists, subtract_bkg=subtract_bkg)
 
-    def get_time_lightcurve(self, tstart, tend, timebin, extract_dir='', lcid='', filter_terms=[], pointings=[], from_start=False)	:
+    def get_time_lightcurve(self, tstart, tend, timebin, extract_dir='', lcid='', filter_terms=[], pointings=[], from_start=False, subtract_bkg=True)	:
         #
         # extract the lightcurve between specfied start and stop time
         #
@@ -921,9 +921,9 @@ class EPICExtractor(object):
                 tend = point_stop
 
             filt = ["(TIME in [%d:%d])" % (tstart, tend)] + filter_terms
-            self.get_lightcurve(timebin, extract_dir, lcid, filt, [pointing])
+            self.get_lightcurve(timebin, extract_dir, lcid, filt, [pointing], subtract_bkg=subtract_bkg)
 
-    def get_time_energy_lightcurve(self, tstart, tend, enmin, enmax, timebin, extract_dir='', lcid='', filter_terms=[], pointings=[], from_start=False)	:
+    def get_time_energy_lightcurve(self, tstart, tend, enmin, enmax, timebin, extract_dir='', lcid='', filter_terms=[], pointings=[], from_start=False, subtract_bkg=True)	:
         #
         # extract the lightcurve between specfied start and stop time in a specific energy range (in eV)
         #
@@ -952,7 +952,7 @@ class EPICExtractor(object):
 
             filt = ["(TIME in [%d:%d])" % (tstart, tend),
                     "(PI in [%d:%d])" % (enmin, enmax)] + filter_terms
-            self.get_lightcurve(timebin, extract_dir, lcid, filt, [pointing])
+            self.get_lightcurve(timebin, extract_dir, lcid, filt, [pointing], subtract_bkg=subtract_bkg)
 
     def make_gti(self, ratemin=0, ratemax=0, timebin=10, gti_dir='', extract_dir='', lcdir='', lcid='', lckey='src', lccorr=False, makelc=True, pointings=[]):
 
