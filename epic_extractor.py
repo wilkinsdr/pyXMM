@@ -855,7 +855,7 @@ class EPICExtractor(object):
                     'outset=' + corrlc,
                     'applyabsolutecorrections=yes']
 
-            if(subract_bkg and bkgkey != None and bkgkey != '' and os.path.exists(bkglc)):
+            if(subtract_bkg and bkgkey != None and bkgkey != '' and os.path.exists(bkglc)):
                 args.append('withbkgset=yes')
                 args.append('bkgtslist=' + bkglc)
             else:
