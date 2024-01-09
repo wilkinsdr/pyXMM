@@ -476,7 +476,7 @@ class EPICExtractor(object):
         if(not os.path.exists(extract_dir)):
             os.makedirs(extract_dir)
 
-        if(self.instrument == self.instrument):
+        if(self.instrument == 'pn'):
             specchannelmax = 20479
         elif(self.instrument == 'mos'):
             specchannelmax = 11999
