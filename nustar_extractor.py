@@ -24,7 +24,7 @@ class NustarExtractor(object):
 
         self.evlsdir = self.obsdir + '/reproc' + ('_%s' % suffix if suffix is not None else '')
         self.extractdir = self.obsdir + '/products' + ('_%s' % suffix if suffix is not None else '') + ('_%s' % region_suffix if region_suffix is not None else '')
-        self.lcdir = self.obsdir + '/products' + ('_%s' % suffix if suffix is not None else '') + ('_%s' % region_suffix if region_suffix is not None else '')
+        self.lcdir = self.obsdir + '/lightcurves' + ('_%s' % suffix if suffix is not None else '') + ('_%s' % region_suffix if region_suffix is not None else '')
         self.regiondir = self.obsdir + '/regions'
         self.gtidir = self.obsdir + '/gti'
 
