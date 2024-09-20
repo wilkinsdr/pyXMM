@@ -40,9 +40,7 @@ class NustarExtractor(object):
             if run_reduction:
                 self.reprocess(saacalc, saamode, tentacle)
             else:
-                pass
-                #raise AssertionError("nupipeline has not been run on OBSID " + obsdir)
-
+                raise AssertionError("nupipeline has not been run on OBSID " + obsdir)
 
         # the region specification for each pointing/event list
         self.regions = self._get_regions(region_suffix)
