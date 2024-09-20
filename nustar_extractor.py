@@ -197,10 +197,10 @@ class NustarExtractor(object):
             extractdir = self.extractdir
 
         for inst in ['A', 'B']:
-            srcspec = extractdir + self.stem + inst + '01_sr.pha'
-            bkgspec = (extractdir + self.stem + inst + '01_sr.pha') if usebkg else None
-            rmf = extractdir + self.stem + inst + '01_sr.rmf'
-            grpspec = extractdir + self.stem + inst + '01_sr.grp'
+            srcspec = extractdir + '/' + self.stem + inst + '01_sr.pha'
+            bkgspec = (extractdir + '/' + self.stem + inst + '01_sr.pha') if usebkg else None
+            rmf = extractdir + '/' + self.stem + inst + '01_sr.rmf'
+            grpspec = extractdir + '/' + self.stem + inst + '01_sr.grp'
 
             group_spec(grpspec, srcspec, bkgfile=bkgspec, rmffile=rmf, grptype=grptype, grpscale=grpscale, usebkg=usebkg)
 
@@ -231,30 +231,74 @@ class NustarExtractor(object):
 
         self.extract_products(extractdir=extractdir, usrgtifile=gtifile, **kwargs)
 
-    def get_lightcurve(self, tbin=10, corr_energy=5, lcfiles=None, bkglcfiles=None, extractdir=None, **kwargs):
+    def get_lightcurve(self, tbin=10, corr_energy=5, lcfiles=None, bkglcfiles=None, sumlcfile=None, sumbkglcfile=None,
+                       bkgsublcfiles=None, sumbkgsublcfile=None, extractdir=None, sumlc=True, bkgsub=True, **kwargs):
         if extractdir is None:
             extractdir = self.lcdir
 
         if lcfiles is None:
             lcfiles = ["%s_src_%s_tbin%d.lc" % (self.stem, inst, tbin) for inst in ['FPMA', 'FPMB']]
-        if lcfiles is None:
+        if bkglcfiles is None:
             bkglcfiles = ["%s_bkg_%s_tbin%d.lc" % (self.stem, inst, tbin) for inst in ['FPMA', 'FPMB']]
 
         for inst, lcfile, bkglcfile in zip(['FPMA', 'FPMB'], lcfiles, bkglcfiles):
             self.nuproducts(extractdir, instruments=[inst], lcfile=lcfile, bkglcfile=bkglcfile, imagefile='NONE', phafile='NONE', runmkarf='no', runmkrmf='no', binsize=tbin, lcenergy=corr_energy, **kwargs)
 
-    def get_energy_lightcurve(self, enmin, enmax, tbin=10, corr_energy=5, lcfiles=None, bkglcfiles=None, extractdir=None, **kwargs):
+        # add the FPMA and FPMB light curves if requested
+        if sumlc:
+            if sumlcfile is None:
+                sumlcfile = "%s_src_%s_tbin%d.lc" % (self.stem, 'fpmsum', tbin)
+            # add the light curves together using lcmath
+            args = ['lcmath', extractdir + '/' + lcfiles[0], extractdir + '/' + lcfiles[1], extractdir + '/' + sumlcfile, '1', '1', 'addsubr=yes']
+            proc = subprocess.Popen(args).wait()
+
+            if sumbkglcfile is None:
+                sumbkglcfile = "%s_bkg_%s_tbin%d.lc" % (self.stem, 'fpmsum', tbin)
+            # add the light curves together using lcmath
+            args = ['lcmath', extractdir + '/' + bkglcfiles[0], extractdir + '/' + bkglcfiles[1], extractdir + '/' + sumlcfile, '1', '1', 'addsubr=yes']
+            proc = subprocess.Popen(args).wait()
+
+        # subtract the background light curves if requested
+        if bkgsub:
+            if bkgsublcfiles is None:
+                bkgsublcfiles = ["%s_src_bkgsub_%s_tbin%d.lc" % (self.stem, inst, tbin) for inst in ['FPMA', 'FPMB']]
+            for s, b, sub in zip(lcfiles, bkglcfiles, bkgsublcfiles):
+                args = ['lcmath', extractdir + '/' + s, extractdir + '/' + b, extractdir + '/' + sub, '1', '1', 'addsubr=no']
+                proc = subprocess.Popen(args).wait()
+
+            # add subtract the background from the summed light curve
+            if sumlc:
+                if sumbkgsublcfile is None:
+                    sumbkgsublcfile = "%s_src_bkgsub_%s_tbin%d.lc" % (self.stem, 'fpmsum', tbin)
+                args = ['lcmath', extractdir + '/' + sumlcfile, extractdir + '/' + sumbkglcfile, extractdir + '/' + sumbkgsublcfile, '1', '1', 'addsubr=no']
+                proc = subprocess.Popen(args).wait()
+
+
+    def get_energy_lightcurve(self, enmin, enmax, tbin=10, corr_energy=5, lcfiles=None, bkglcfiles=None, sumlcfile=None,
+                              sumbkglcfile=None, bkgsublcfiles=None, sumbkgsublcfile=None, extractdir=None, **kwargs):
         if extractdir is None:
             extractdir = self.lcdir
 
         if lcfiles is None:
             lcfiles = ["%s_src_%s_tbin%d_en%d-%d.lc" % (self.stem, inst, tbin, enmin, enmax) for inst in ['FPMA', 'FPMB']]
-        if lcfiles is None:
+        if bkglcfiles is None:
             bkglcfiles = ["%s_bkg_%s_tbin%d_en%d-%d.lc" % (self.stem, inst, tbin, enmin, enmax) for inst in ['FPMA', 'FPMB']]
+        if bkgsublcfiles is None:
+            bkgsublcfiles = ["%s_src_bkgsub_%s_tbin%d_en%d-%d.lc" % (self.stem, inst, tbin, enmin, enmax) for inst in ['FPMA', 'FPMB']]
+        if sumlcfile is None:
+            sumlcfile = "%s_src_%s_tbin%d_en%d-%d.lc" % (self.stem, 'fpmsum', tbin, enmin, enmax)
+        if sumbkglcfile is None:
+            sumbkglcfile = "%s_bkg_%s_tbin%d_en%d-%d.lc" % (self.stem, 'fpmsum', tbin, enmin, enmax)
+        if sumbkgsublcfile is None:
+            sumbkgsublcfile = "%s_src_bkgsub_%s_tbin%d_en%d-%d.lc" % (self.stem, 'fpmsum', tbin, enmin, enmax)
+
 
         corr_energy = 0.5 * (enmin + enmax) / 1000. # apply PSF vignetting correction at the midpoint of the energy band
 
-        self.get_lightcurve(tbin, corr_energy=corr_energy, lcfiles=lcfiles, bkglcfiles=bkglcfiles, extractdir=extractdir, pilow=self.pichan(enmin), pihigh=self.pichan(enmax), **kwargs)
+        self.get_lightcurve(tbin, corr_energy=corr_energy, lcfiles=lcfiles, bkglcfiles=bkglcfiles,
+                            sumlcfile=sumlcfile, sumbkglcfile=sumbkglcfile, bkgsublcfiles=bkgsublcfiles,
+                            sumbkgsublcfile=sumbkgsublcfile, extractdir=extractdir,
+                            pilow=self.pichan(enmin), pihigh=self.pichan(enmax), **kwargs)
 
     #-- Utility functions -----------------------------------------------
     @staticmethod
