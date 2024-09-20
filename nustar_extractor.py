@@ -24,6 +24,7 @@ class NustarExtractor(object):
 
         self.evlsdir = self.obsdir + '/reproc' + ('_%s' % suffix if suffix is not None else '')
         self.extractdir = self.obsdir + '/products' + ('_%s' % suffix if suffix is not None else '') + ('_%s' % region_suffix if region_suffix is not None else '')
+        self.lcdir = self.obsdir + '/products' + ('_%s' % suffix if suffix is not None else '') + ('_%s' % region_suffix if region_suffix is not None else '')
         self.regiondir = self.obsdir + '/regions'
         self.gtidir = self.obsdir + '/gti'
 
@@ -51,28 +52,23 @@ class NustarExtractor(object):
         self.stop_time = []
         #self._get_start_stop_times()
 
+        self._ready_to_extract()
+
 
     #-- Observation status checks --------------------------------------------
 
     def _check_reproc(self):
-        return len(glob.glob(self.evlsdir + '*01_cl.evt')) > 0
+        return len(glob.glob(self.evlsdir + '/*01_cl.evt')) > 0
 
     def _ready_to_extract(self):
         #
         # check if this observation is ready to extract products
         #
-        if(not self._check_odfingest()):
-            print(
-                "Not ready to extract products: odfingest has not been run on these ODFs")
+        if(not self._check_reproc()):
+            print("Not ready to extract products: Could not find reprocessed event lists.")
             return False
-        if(not self._check_cif()):
-            print("Not ready to extract products: CIF has not been built")
-            return False
-        if(len(self.evls) < 1):
-            print("Not ready to extract products: Could not find filtered event list")
-            return False
-        if(len(self.regions) < 1):
-            print("Not ready to extract products: No regions defined")
+        if(not self._check_regions()):
+            print("Not ready to extract products: Regions have not been defined.")
             return False
 
         return True
@@ -99,7 +95,6 @@ class NustarExtractor(object):
         #
         proc = subprocess.Popen(args).wait()
 
-
     #-- Region lookup  -------------------------------------------------------
     def _get_regions(self, region_suffix=None):
         regions = {'FPMA' : {'src': self.regiondir + '/src_FPMA%s.reg' % ('_%s' % region_suffix if region_suffix is not None else ''),
@@ -108,6 +103,23 @@ class NustarExtractor(object):
                             'bkg': self.regiondir + '/bkg_FPMB%s.reg' % ('_%s' % region_suffix if region_suffix is not None else '')}}
         return regions
 
+    def _check_regions(self):
+        result = True
+        if not os.path.exists(self.regions['FPMA']['src']):
+            print("Source region for FPMA does not exist (%s)" % self.regions['FPMA']['src'])
+            result = False
+        if not os.path.exists(self.regions['FPMB']['src']):
+            print("Source region for FPMB does not exist (%s)" % self.regions['FPMB']['src'])
+            result = False
+        if not os.path.exists(self.regions['FPMA']['src']):
+            print("Background region for FPMA does not exist (%s). No background products will be extracted." %
+                  self.regions['FPMA']['bkg'])
+            self.regions['FPMA']['bkg'] = None
+        if not os.path.exists(self.regions['FPMA']['src']):
+            print("Background region for FPMB does not exist (%s). No background products will be extracted." %
+                  self.regions['FPMB']['bkg'])
+            self.regions['FPMB']['bkg'] = None
+        return result
 
     #-- Observation header data lookups --------------------------------------
 
@@ -128,6 +140,9 @@ class NustarExtractor(object):
 
     #-- Product extraction routines -----------------------------------------
     def nuproducts(self, extractdir=None, instruments=None, **kwargs):
+        if not self._ready_to_extract():
+            return
+
         if extractdir is None:
             extractdir = self.extractdir
 
@@ -158,13 +173,18 @@ class NustarExtractor(object):
             #
             proc = subprocess.Popen(args).wait()
 
-    def extract_products(self, extractdir=None, grptype='opt', grpscale=None, usebkg=False, **kwargs):
+    def extract_products(self, extractdir=None, grptype='opt', grpscale=None, grpusebkg=False, **kwargs):
+        """
+        Extract products for FPMA and FPMB using the default settings, then perform grouping on the spectra
+        (by default, optimal binning)
+        """
         if extractdir is None:
             extractdir = self.extractdir
 
         self.nuproducts(extractdir, **kwargs)
+
         if grptype is not None:
-            self.group_spectra(extractdir, grptype, grpscale, usebkg)
+            self.group_spectra(extractdir, grptype, grpscale, grpusebkg)
 
     def group_spectra(self, extractdir=None, grptype='opt', grpscale=None, usebkg=False):
         if extractdir is None:
@@ -203,17 +223,40 @@ class NustarExtractor(object):
         self.extract_products(extractdir=extractdir, usrgtifile=gtifile, **kwargs)
 
     def get_lightcurve(self, tbin=10, corr_energy=5, lcfiles=None, bkglcfiles=None, extractdir=None, **kwargs):
+        if extractdir is None:
+            extractdir = self.lcdir
+
         if lcfiles is None:
             lcfiles = ["%s_src_%s_tbin%d.lc" % (self.stem, inst, tbin) for inst in ['FPMA', 'FPMB']]
         if lcfiles is None:
             bkglcfiles = ["%s_bkg_%s_tbin%d.lc" % (self.stem, inst, tbin) for inst in ['FPMA', 'FPMB']]
 
-        for inst, lcfile, bkglcfile in zip(['FPMA', 'FPMB'], lcfiles, bkglcfiles:
+        for inst, lcfile, bkglcfile in zip(['FPMA', 'FPMB'], lcfiles, bkglcfiles):
             self.nuproducts(extractdir, instruments=[inst], lcfile=lcfile, bkglcfile=bkglcfile, imagefile='NONE', phafile='NONE', runmkarf='no', runmkrmf='no', binsize=tbin, lcenergy=corr_energy, **kwargs)
 
+    def get_energy_lightcurve(self, enmin, enmax, tbin=10, corr_energy=5, lcfiles=None, bkglcfiles=None, extractdir=None, **kwargs):
+        if extractdir is None:
+            extractdir = self.lcdir
+
+        if lcfiles is None:
+            lcfiles = ["%s_src_%s_tbin%d_en%d-%d.lc" % (self.stem, inst, tbin, enmin, enmax) for inst in ['FPMA', 'FPMB']]
+        if lcfiles is None:
+            bkglcfiles = ["%s_bkg_%s_tbin%d_en%d-%d.lc" % (self.stem, inst, tbin, enmin, enmax) for inst in ['FPMA', 'FPMB']]
+
+        corr_energy = 0.5 * (enmin + enmax) / 1000. # apply PSF vignetting correction at the midpoint of the energy band
+
+        self.get_lightcurve(tbin, corr_energy=corr_energy, lcfiles=lcfiles, bkglcfiles=bkglcfiles, extractdir=extractdir, pilow=self.pichan(enmin), pihigh=self.pichan(enmax), **kwargs)
+
+    #-- Utility functions -----------------------------------------------
+    @staticmethod
+    def pichan(energy):
+        """
+        Convert energy in eV to NuSTAR PHA channel
+        """
+        return int((energy - 1600) / 40.)
 
     #-- Batch light curve generation ------------------------------------
-    def batch_energy_lightcurve(self, tbin=10, en0=300, enmax=10000, Nen=10, enbins=None, subdir='energy', **kwargs):
+    def batch_energy_lightcurve(self, tbin=10, en0=300, enmax=10000, Nen=10, enbins=None, subdir='energy', extractdir=None, **kwargs):
         if enbins is None:
             enbins = np.round(np.logspace(np.log10(en0), np.log10(enmax), Nen)).astype(int)
         elif enbins == 'lagen':
@@ -230,8 +273,9 @@ class NustarExtractor(object):
             enstart = enbins[:-1]
             enend = enbins[1:]
 
-        extract_dir = self.lcdir + '/' + subdir
+        if extractdir is None:
+            extractdir = self.lcdir + '/' + subdir
 
         for s, e in zip(enstart, enend):
-            self.get_energy_lightcurve(s, e, tbin, extract_dir, **kwargs)
+            self.get_energy_lightcurve(s, e, tbin, extractdir=extractdir, **kwargs)
 
