@@ -14,7 +14,7 @@ from .gti import *
 
 class NustarExtractor(object):
     #
-    # class to extract data products from XMM-Newton EPIC pn observations
+    # class to extract data products from NuSTAR observations
     #
 
     def __init__(self, obsdir, region_file='regions.sh', run_reduction=False, saacalc=3, saamode=None, tentacle=None, suffix=None, region_suffix=None):
@@ -76,6 +76,11 @@ class NustarExtractor(object):
     #-- Initial data reduction -----------------------------------------------
 
     def reprocess(self, saacalc=3, saamode=None, tentacle=None):
+        if not os.path.exists(self.evlsdir):
+            os.mkdir(self.evlsdir)
+        if not os.path.exists(self.regiondir):
+            os.mkdir(self.regiondir)
+
         #
         # argument array for Popen
         #
@@ -146,6 +151,9 @@ class NustarExtractor(object):
         if extractdir is None:
             extractdir = self.extractdir
 
+        if not os.path.exists(extractdir):
+            os.mkdir(extractdir)
+
         if instruments is None:
             instruments = ['FPMA', 'FPMB']
         elif isinstance(instruments, str):
@@ -206,6 +214,9 @@ class NustarExtractor(object):
             extractdir = self.extractdir + '_' + label
 
         gtifile = self.gtidir + label + '.gti'
+
+        if not os.path.exists(self.gtidir):
+            os.mkdir(self.gtidir)
 
         g = GTI()
         g.add_row(tstart, tstop)
