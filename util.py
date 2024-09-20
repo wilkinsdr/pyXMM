@@ -9,7 +9,7 @@ def list_obsids():
     # Return a list of the OBSIDs directories in the current location
     # (returns list of directories whose names are just 10 digits)
     #
-    return sorted([d for d in next(os.walk('.'))[1] if re.match('^[0-9]{10}$', d)])
+    return sorted([d for d in next(os.walk('.'))[1] if re.match('^[0-9]+$', d)])
 
 
 def abbrev_obsid(files):
