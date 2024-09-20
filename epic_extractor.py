@@ -9,6 +9,8 @@ except:
     import pyfits
 import numpy as np
 
+from .spec_util import *
+
 class EPICExtractor(object):
     #
     # class to extract data products from XMM-Newton EPIC pn observations
@@ -666,6 +668,44 @@ class EPICExtractor(object):
             #
             proc = subprocess.Popen(args, env=self.envvars).wait()
 
+    def optbin_spectrum(self, extract_dir='', specid='', srckey='src', bkgkey='bkg', pointings=[]):
+        #
+        # group a spectrum
+        # takes the source and background spectra with specified id in extract_dir
+        #
+        if (extract_dir == ''):
+            extract_dir = self.specdir
+
+        for pointing in self.pointings:
+            if (len(pointings) > 0 and pointing not in pointings):
+                continue
+
+            srcnamearr = [self.obsdir, pointing, srckey, self.instrument, specid]
+            srcname = '_'.join(filter(None, srcnamearr))
+            bkgnamearr = [self.obsdir, pointing, bkgkey, self.instrument, specid]
+            bkgname = '_'.join(filter(None, bkgnamearr))
+
+            specfile = extract_dir + '/' + srcname + '.pha'
+            bkg = bkgname + '.pha'
+            rmf = srcname + '.rmf'
+            arf = srcname + '.arf'
+
+            rmffile = extract_dir + '/' + rmf
+            grpfile = extract_dir + '/' + srcname + '_opt.grp'
+
+            if (not os.path.exists(specfile)):
+                print("optbin_spectrum ERROR: Source spectrum file not found")
+                return
+            if (not os.path.exists(extract_dir + '/' + bkg)):
+                print("optbin_spectrum WARNING: Background spectrum file not found")
+            if (not os.path.exists(extract_dir + '/' + rmf)):
+                print("optbin_spectrum WARNING: RMF not found")
+            if (not os.path.exists(extract_dir + '/' + arf)):
+                print("optbin_spectrum WARNING: ARF not found")
+
+            group_spec(grpfile, specfile, rmffile=rmffile, grptype='opt')
+            link_spectra(grpfile, bkg=bkg, rmf=rmf, arf=arf)
+
     def get_spectrum(self, extract_dir='', specid='', grpmin=20, filter_terms=[], pointings=[]):
         #
         # automated extraction of the spectrum
@@ -681,6 +721,7 @@ class EPICExtractor(object):
         self.create_rmf('src', extract_dir, specid, pointings=pointings)
         self.create_arf('src', extract_dir, specid, pointings=pointings)
         self.group_spectrum(extract_dir, specid, grpmin, pointings=pointings)
+        self.optbin_spectrum(extract_dir, specid, pointings=pointings)
 
     def get_time_spectrum(self, tstart, tend, extract_dir='', specid='', grpmin=20, filter_terms=[], pointings=[], from_start=False)	:
         #
@@ -1032,7 +1073,7 @@ class EPICExtractor(object):
         elif enbins == 'lagen':
             enbins = [300,400,500,600,800,1000,1300,1600,2000,2500,3000,4000,5000,7000,10000]
         elif enbins == 'lagen_coarse':
-            enbins = [300,400,500,600,800,1000,1300,1600,2000,2500,3000,4000,5000,7000]
+            enbins = [300,500,700,1000,1400,2000,3000,5000,7000,10000]
         elif enbins == 'lagfreq':
             enbins = ([300,300,1000,1200,4000], [800,1000,4000,4000,7000])
 

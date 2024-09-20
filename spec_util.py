@@ -36,8 +36,47 @@ def grppha(grpfile, specfile, bkgfile=None, rmffile=None, arffile=None, grpmin=2
     proc = subprocess.Popen(args).wait()
 
 
+def group_spec(grpfile, specfile, bkgfile=None, rmffile=None, grptype='opt', grpscale=None, usebkg=False):
+    #
+    # command string for ftgrouppha
+    #
+    args = ['ftgrouppha',
+            specfile,
+            'outfile=%s' % grpfile,
+            'grouptype=%s' % grptype,
+            'clobber=yes']
+
+    if grpscale is not None:
+        args += ['groupscale=%g' % grpscale]
+
+    if rmffile is not None:
+        args += ['respfile=%s' % rmffile]
+    elif grptype=='opt':
+        raise ValueError('Optimal binning requires the RMF to be provided.')
+
+    if bkgfile is not None:
+        args += ['backfile=%s' % bkgfile]
+
+    proc = subprocess.Popen(args).wait()
+
+
+def link_spectra(specfile, bkg=None, rmf=None, arf=None):
+    specfits = pyfits.open(specfile, mode='update')
+
+    if bkg is not None:
+        specfits['SPECTRUM'].header['BACKFILE'] = bkg
+    if rmf is not None:
+        specfits['SPECTRUM'].header['RESPFILE'] = rmf
+    if arf is not None:
+        specfits['SPECTRUM'].header['ANCRFILE'] = arf
+
+    specfits.flush()
+    specfits.close()
+
+
 def update_exposure(specfile, exp):
     srcfits = pyfits.open(specfile, mode='update')
     srcfits[1].header['EXPOSURE'] = exp
     srcfits.flush()
     srcfits.close()
+
