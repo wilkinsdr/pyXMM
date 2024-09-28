@@ -240,7 +240,7 @@ class EPICExtractor(object):
 
     #-- Event filtering ------------------------------------------------------
 
-    def filter_evl(self, filter_terms=[]):
+    def filter_evl(self, filter_terms=[], label=None):
         #
         # apply the standard event filtering criteria to the event lists
         # and create new, filtered event lists
@@ -255,6 +255,8 @@ class EPICExtractor(object):
 
         for pointing, evl in zip(self.pointings, self.unfilt_evls):
             namearr = [self.obsdir, pointing, 'filtered']
+            if label is not None:
+                namearr.append(label)
             filt_evl_name = '_'.join(namearr) + '.evl'
             filt_evl = self.evlsdir + '/' + filt_evl_name
             #
