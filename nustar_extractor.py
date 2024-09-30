@@ -255,7 +255,7 @@ class NustarExtractor(object):
             if sumbkglcfile is None:
                 sumbkglcfile = "%s_bkg_%s_tbin%d.lc" % (self.stem, 'fpmsum', tbin)
             # add the light curves together using lcmath
-            args = ['lcmath', extractdir + '/' + bkglcfiles[0], extractdir + '/' + bkglcfiles[1], extractdir + '/' + sumlcfile, '1', '1', 'addsubr=yes']
+            args = ['lcmath', extractdir + '/' + bkglcfiles[0], extractdir + '/' + bkglcfiles[1], extractdir + '/' + sumbkglcfile, '1', '1', 'addsubr=yes']
             proc = subprocess.Popen(args).wait()
 
         # subtract the background light curves if requested
