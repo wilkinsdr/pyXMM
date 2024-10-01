@@ -33,9 +33,8 @@ class NustarExtractor(object):
         self.tentacle = tentacle
 
         #
-        # check that the observation is ready to go and if not, run the reduction
+        # check that the observation is ready to go and if not, run nupipeline
         #
-        # then odfingest needs to have been run
         if(not self._check_reproc()):
             if run_reduction:
                 self.reprocess(saacalc, saamode, tentacle)
