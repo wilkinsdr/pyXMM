@@ -210,7 +210,7 @@ class NustarExtractor(object):
         if extractdir is None:
             extractdir = self.extractdir + '_' + label
 
-        gtifile = self.gtidir + label + '.gti'
+        gtifile = self.gtidir + '/' + label + '.gti'
 
         if not os.path.exists(self.gtidir):
             os.mkdir(self.gtidir)
