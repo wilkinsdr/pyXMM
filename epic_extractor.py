@@ -16,7 +16,7 @@ class EPICExtractor(object):
     # class to extract data products from XMM-Newton EPIC pn observations
     #
 
-    def __init__(self, obsdir, instrument='pn', region_file='regions.sh', run_reduction=False, bkgfilt=True, pileup_corr=False, ccdnr=4):
+    def __init__(self, obsdir, instrument='pn', suffix=None, region_file='regions.sh', run_reduction=False, bkgfilt=True, pileup_corr=False, ccdnr=4):
         self.obsdir = obsdir
 
         self.odfdir = self.obsdir + '/odf'
@@ -37,7 +37,13 @@ class EPICExtractor(object):
         self.epatdir = self.instdir + '/epat'
         self.gtidir = self.instdir + '/gti'
         
-        if pileup_corr:
+        if suffix is not None:
+            self.evlsdir += '_' + suffix
+            self.specdir += '_' + suffix
+            self.imagedir += '_' + suffix
+            self.epatdir += '_' + suffix
+            self.lcdir += '_' + suffix
+        elif pileup_corr:
             self.evlsdir += '_pileupcorr'
             self.specdir += '_pileupcorr'
 
@@ -242,7 +248,7 @@ class EPICExtractor(object):
 
     #-- Event filtering ------------------------------------------------------
 
-    def filter_evl(self, filter_terms=[]):
+    def filter_evl(self, filter_terms=[], label=None):
         #
         # apply the standard event filtering criteria to the event lists
         # and create new, filtered event lists
@@ -257,6 +263,8 @@ class EPICExtractor(object):
 
         for pointing, evl in zip(self.pointings, self.unfilt_evls):
             namearr = [self.obsdir, pointing, 'filtered']
+            if label is not None:
+                namearr.append(label)
             filt_evl_name = '_'.join(namearr) + '.evl'
             filt_evl = self.evlsdir + '/' + filt_evl_name
             #
