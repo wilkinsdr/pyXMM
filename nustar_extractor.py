@@ -33,9 +33,8 @@ class NustarExtractor(object):
         self.tentacle = tentacle
 
         #
-        # check that the observation is ready to go and if not, run the reduction
+        # check that the observation is ready to go and if not, run nupipeline
         #
-        # then odfingest needs to have been run
         if(not self._check_reproc()):
             if run_reduction:
                 self.reprocess(saacalc, saamode, tentacle)
@@ -255,7 +254,7 @@ class NustarExtractor(object):
             if sumbkglcfile is None:
                 sumbkglcfile = "%s_bkg_%s_tbin%d.lc" % (self.stem, 'fpmsum', tbin)
             # add the light curves together using lcmath
-            args = ['lcmath', extractdir + '/' + bkglcfiles[0], extractdir + '/' + bkglcfiles[1], extractdir + '/' + sumlcfile, '1', '1', 'addsubr=yes']
+            args = ['lcmath', extractdir + '/' + bkglcfiles[0], extractdir + '/' + bkglcfiles[1], extractdir + '/' + sumbkglcfile, '1', '1', 'addsubr=yes']
             proc = subprocess.Popen(args).wait()
 
         # subtract the background light curves if requested
