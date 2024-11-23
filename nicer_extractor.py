@@ -17,7 +17,7 @@ class NicerExtractor(object):
     # class to extract data products from NuSTAR observations
     #
 
-    def __init__(self, obsdir, region_file='regions.sh', run_reduction=False, suffix=None):
+    def __init__(self, obsdir, region_file='regions.sh', run_reduction=False, suffix=None, **kwargs):
         self.obsdir = obsdir
 
         self.stem = 'ni%s' % obsdir
@@ -32,7 +32,7 @@ class NicerExtractor(object):
         #
         if(not self._check_reproc()):
             if run_reduction:
-                self.reprocess()
+                self.reprocess(**kwargs)
             else:
                 raise AssertionError("nupipeline has not been run on OBSID " + obsdir)
 
@@ -61,7 +61,7 @@ class NicerExtractor(object):
 
     #-- Initial data reduction -----------------------------------------------
 
-    def reprocess(self):
+    def reprocess(self, **kwargs):
         #
         # argument array for Popen
         #
