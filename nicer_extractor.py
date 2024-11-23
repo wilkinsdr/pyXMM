@@ -70,8 +70,11 @@ class NicerExtractor(object):
         #
         args = ['nicerl2',
                 'indir=' + self.obsdir,
+                'cldir=' + self.evlsdir,
                 'clobber=YES'
                 ]
+
+        args += ['%s=%s' % (arg, str(kwargs[arg])) for arg in kwargs]
 
         #
         # and execute it
@@ -105,6 +108,7 @@ class NicerExtractor(object):
         #
         args = ['nicerl3-spect',
                 self.obsdir,
+                'cldir=' + self.evlsdir,
                 'bkgmodeltype=' + bkg,
                 'clobber=YES'
                 ]
@@ -134,6 +138,7 @@ class NicerExtractor(object):
             #
             args = ['nicerl3-lc',
                     self.obsdir,
+                    'cldir=' + self.evlsdir,
                     'pirange=%d-%d' % pirange,
                     'timebin=%g' % tbin,
                     'clobber=YES'
