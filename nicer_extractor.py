@@ -20,11 +20,11 @@ class NicerExtractor(object):
     def __init__(self, obsdir, region_file='regions.sh', run_reduction=False, suffix=None):
         self.obsdir = obsdir
 
-        self.stem = 'nu%s' % obsdir
+        self.stem = 'ni%s' % obsdir
 
         self.evlsdir = self.obsdir + '/xti/event_cl' + ('_%s' % suffix if suffix is not None else '')
-        self.specdir = self.obsdir + '/xti/spectras' + ('_%s' % suffix if suffix is not None else '') + ('_%s' % region_suffix if region_suffix is not None else '')
-        self.lcdir = self.obsdir + '/xti/lightcurves' + ('_%s' % suffix if suffix is not None else '') + ('_%s' % region_suffix if region_suffix is not None else '')
+        self.specdir = self.obsdir + '/xti/spectras' + ('_%s' % suffix if suffix is not None else '')
+        self.lcdir = self.obsdir + '/xti/lightcurves' + ('_%s' % suffix if suffix is not None else '')
         self.gtidir = self.obsdir + '/gti'
 
         #
@@ -47,7 +47,7 @@ class NicerExtractor(object):
     #-- Observation status checks --------------------------------------------
 
     def _check_reproc(self):
-        return len(glob.glob(self.evlsdir + '/*01_cl.evt')) > 0
+        return len(glob.glob(self.evlsdir + '/*mpu7_cl.evt')) > 0
 
     def _ready_to_extract(self):
         #
@@ -55,9 +55,6 @@ class NicerExtractor(object):
         #
         if(not self._check_reproc()):
             print("Not ready to extract products: Could not find reprocessed event lists.")
-            return False
-        if(not self._check_regions()):
-            print("Not ready to extract products: Regions have not been defined.")
             return False
 
         return True
@@ -119,7 +116,7 @@ class NicerExtractor(object):
         proc = subprocess.Popen(args).wait()
 
 
-    def get_lightcurve(self, tbin=10., pirange=(30,800), bkg=None, suffix=None, **kwargs):
+    def get_lightcurve(self, tbin=10., pirange=(30,800), extractdir=None, bkg=None, suffix=None, **kwargs):
         if not self._ready_to_extract():
             return
 
@@ -152,29 +149,7 @@ class NicerExtractor(object):
 
     def get_energy_lightcurve(self, enmin, enmax, tbin=10, corr_energy=5, lcfiles=None, bkglcfiles=None, sumlcfile=None,
                               sumbkglcfile=None, bkgsublcfiles=None, sumbkgsublcfile=None, extractdir=None, **kwargs):
-        if extractdir is None:
-            extractdir = self.lcdir
-
-        if lcfiles is None:
-            lcfiles = ["%s_src_%s_tbin%d_en%d-%d.lc" % (self.stem, inst, tbin, enmin, enmax) for inst in ['FPMA', 'FPMB']]
-        if bkglcfiles is None:
-            bkglcfiles = ["%s_bkg_%s_tbin%d_en%d-%d.lc" % (self.stem, inst, tbin, enmin, enmax) for inst in ['FPMA', 'FPMB']]
-        if bkgsublcfiles is None:
-            bkgsublcfiles = ["%s_src_bkgsub_%s_tbin%d_en%d-%d.lc" % (self.stem, inst, tbin, enmin, enmax) for inst in ['FPMA', 'FPMB']]
-        if sumlcfile is None:
-            sumlcfile = "%s_src_%s_tbin%d_en%d-%d.lc" % (self.stem, 'fpmsum', tbin, enmin, enmax)
-        if sumbkglcfile is None:
-            sumbkglcfile = "%s_bkg_%s_tbin%d_en%d-%d.lc" % (self.stem, 'fpmsum', tbin, enmin, enmax)
-        if sumbkgsublcfile is None:
-            sumbkgsublcfile = "%s_src_bkgsub_%s_tbin%d_en%d-%d.lc" % (self.stem, 'fpmsum', tbin, enmin, enmax)
-
-
-        corr_energy = 0.5 * (enmin + enmax) / 1000. # apply PSF vignetting correction at the midpoint of the energy band
-
-        self.get_lightcurve(tbin, corr_energy=corr_energy, lcfiles=lcfiles, bkglcfiles=bkglcfiles,
-                            sumlcfile=sumlcfile, sumbkglcfile=sumbkglcfile, bkgsublcfiles=bkgsublcfiles,
-                            sumbkgsublcfile=sumbkgsublcfile, extractdir=extractdir,
-                            pilow=self.pichan(enmin), pihigh=self.pichan(enmax), **kwargs)
+        pass
 
     #-- Utility functions -----------------------------------------------
     @staticmethod
