@@ -23,7 +23,7 @@ class RGSExtractor(object):
     # class to extract data products from XMM-Newton EPIC pn observations
     #
 
-    def __init__(self, obsdir, run_reduction=False, bkgfilt=True, bkg_rate=0.2, subdir=None):
+    def __init__(self, obsdir, run_reduction=False, bkgfilt=True, bkg_rate=0.2, time=None, subdir=None):
         self.obsdir = obsdir
 
         self.odfdir = self.obsdir + '/odf'
@@ -72,7 +72,7 @@ class RGSExtractor(object):
             if run_reduction:
                 self.proc_rgs()
                 if bkgfilt:
-                    self.filter(rate=bkg_rate)
+                    self.filter(rate=bkg_rate, time=time)
                 self.find_spectra()
                 self.combine_spectra()
             else:
