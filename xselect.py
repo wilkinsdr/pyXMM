@@ -10,11 +10,15 @@ class Xselect(object):
         self.session_name = 'xsel%d' % int(time.time() % 604800) if session_name is None else session_name
         self.xsel = None
 
-    def __enter__(self):
+    def start(self):
         args = ['xselect',
                 'prefix=%s' % self.session_name]
 
-        self.xsel = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True, text=True, bufsize=1)
+        self.xsel = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True,
+                                     text=True, bufsize=1)
+
+    def __enter__(self):
+        self.start()
         return self
 
     def command(self, cmd):
