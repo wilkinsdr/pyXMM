@@ -6,7 +6,7 @@ except:
 import numpy as np
 import glob
 
-from pyxmm.spec_util import *
+from .spec_util import *
 
 
 def combine_spectra(srcfiles='*sr*.pha', bkgfiles=None, rmffiles=None, arffiles=None, comb_spec='src_comb.pha', comb_bkg='bkg_comb.pha', comb_rmf='src_comb.rmf', comb_arf='src_comb.arf', comb_grp='src_comb.grp', grpmin=20, exposure_calc='sum', nustar=False):
