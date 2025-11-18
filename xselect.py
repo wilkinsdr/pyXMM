@@ -14,7 +14,7 @@ class Xselect(object):
         args = ['xselect',
                 'prefix=%s' % self.session_name]
 
-        self.xsel = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=None, universal_newlines=True, text=True, bufsize=1)
+        self.xsel = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True, text=True, bufsize=1)
         return self
 
     def command(self, cmd):
