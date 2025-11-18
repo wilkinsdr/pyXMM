@@ -6,8 +6,8 @@ v2.0 - 15/03/2017 - D.R. Wilkins
 
 Data reduction/extraction for a single OBSID is handled by EPICExtractor class
 """
-from .epic_extractor import *
-from .rgs_extractor import *
+from .epic import *
+from .rgs import *
 from .gti import *
 from .util import *
 from .spec_util import *

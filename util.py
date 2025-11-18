@@ -2,7 +2,7 @@ import os
 import glob
 import re
 
-from .epic_extractor import *
+from .epic import *
 
 def list_obsids():
     #

@@ -1,4 +1,4 @@
-from .epic_extractor import *
+from .epic import *
 from .util import *
 
 lagen_bins = ([300,400,500,600,800,1000,1300,1600,2000,2500,3000,4000,5000,7000],
