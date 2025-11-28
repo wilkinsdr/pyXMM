@@ -4,6 +4,7 @@ XRISM Resolve extractor
 import glob
 import subprocess
 from .xselect import Xselect
+from .spec_util import *
 import os
 import re
 from astropy.io import fits
@@ -274,7 +275,7 @@ class ResolveExtractor(object):
         proc = subprocess.Popen(['punlearn', 'xaarfgen']).wait()
         proc = subprocess.Popen(args).wait()
 
-    def get_spectrum(self, grade=['Hp'], pixels='0:11,13:26,28:35', extract_evl=False, whichrmf='X', split_rmf=True, ra=None, dec=None, suffix=None, extract_spectrum=True, make_rmf=True, make_arf=True):
+    def get_spectrum(self, grade=['Hp'], pixels='0:11,13:26,28:35', extract_evl=False, whichrmf='X', split_rmf=True, ra=None, dec=None, suffix=None, extract_spectrum=True, make_rmf=True, make_arf=True, link_resp=True):
         for evl in self.evls:
             name_arr = ['%srsl' % self.stem]
             if len(self.evls) > 1:
@@ -283,21 +284,20 @@ class ResolveExtractor(object):
             if suffix is not None:
                 name_arr.append(suffix)
 
-            print(name_arr)
+            if not os.path.exists(self.specdir):
+                os.mkdir(self.specdir)
 
             spec_filename = '_'.join(name_arr) + '_%s' % ''.join(grade) + '.pha'
             spec_file = self.specdir + '/' + spec_filename
 
-            print(spec_file)
-
-            if not os.path.exists(self.specdir):
-                os.mkdir(self.specdir)
-
             rmf_root = self.specdir + '/' + '_'.join(name_arr) + '_%s' % ''.join(grade) + '_%s' % whichrmf
             rmf_file = rmf_root + '_comb.rmf' if split_rmf else rmf_root + '.rmf'
+
             expomap_file = self.scratchdir + '/' + '_'.join(name_arr) + '.expo'
             region_file = self.scratchdir + '/' + self.stem + '_DET.reg'
             arf_file = self.specdir + '/' + '_'.join(name_arr) + '_src.arf'
+
+            grp_file = spec_file.replace('.pha', '_opt.grp')
 
             if extract_spectrum:
                 self.extract_spectrum(evl, spec_file, grade, pixels, extract_evl, suffix)
@@ -307,4 +307,7 @@ class ResolveExtractor(object):
                 self.exposure_map(expomap_file, evl)
                 self.make_region_file(region_file, pixels)
                 self.make_arf_pointsource(arf_file, ra=ra, dec=dec, expomap=expomap_file, regionfile=region_file, rmffile=rmf_file)
-
+            if link_resp:
+                link_spectra(spec_file, rmf=rmf_file, arf=arf_file)
+            if opt_bin:
+                group_spec(grp_file, spec_file, rmffile=rmf_file, grptype='opt')
