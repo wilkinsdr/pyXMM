@@ -140,6 +140,9 @@ class ResolveExtractor(object):
             spec_filename = '_'.join(name_arr) + '.pha'
             spec_file = self.specdir + '/' + spec_filename
 
+        if os.path.exists(spec_file):
+            os.remove(spec_file)
+
         with Xselect() as xsl:
             xsl.read_event(evl)
             if extract_evl:
