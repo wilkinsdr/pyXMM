@@ -305,7 +305,7 @@ class ResolveExtractor(object):
             if extract_spectrum:
                 self.extract_spectrum(evl, spec_file, grade, pixels, extract_evl, suffix)
             if make_rmf:
-                self.make_rmf(rmf_root, whichrmf, grade, pixels.replace(':','-'), split_rmf)
+                self.make_rmf(rmf_root, evl=None, whichrmf=whichrmf, grade=grade, pixels=pixels.replace(':','-'), split=split_rmf)
             if make_arf:
                 self.exposure_map(expomap_file, evl)
                 self.make_region_file(region_file, pixels)
