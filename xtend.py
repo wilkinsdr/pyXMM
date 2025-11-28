@@ -224,7 +224,7 @@ class XtendExtractor(object):
             spec_file = self.specdir + '/' + spec_filename
 
             bkg_filename = '_'.join(name_arr) + '_bkg.pha'
-            bkg_file = self.specdir + '/' + spec_filename
+            bkg_file = self.specdir + '/' + bkg_filename
 
             if src_region is None:
                 if os.path.exists(self.regiondir + '/src_%s.reg' % evl_name):
