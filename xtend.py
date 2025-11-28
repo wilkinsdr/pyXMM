@@ -93,11 +93,11 @@ class XtendExtractor(object):
             xsl.command('filter region %s' % src_region)
             xsl.command('extract spectrum')
             xsl.command('save spectrum %s' % spec_file)
-            if bkg_spec_file is not None:
+            if bkg_file is not None:
                 xsl.command('clear region')
                 xsl.command('filter region %s' % bkg_region)
                 xsl.command('extract spectrum')
-                xsl.command('save spectrum %s' % bkg_spec_file)
+                xsl.command('save spectrum %s' % bkg_file)
 
     def make_rmf(self, outfile=None, spec_file=None):
         if spec_file is None:
