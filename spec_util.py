@@ -3,6 +3,7 @@ try:
     import astropy.io.fits as pyfits
 except:
     import pyfits
+import os
 
 
 def grppha(grpfile, specfile, bkgfile=None, rmffile=None, arffile=None, grpmin=20):
@@ -40,9 +41,11 @@ def group_spec(grpfile, specfile, bkgfile=None, rmffile=None, grptype='opt', grp
     #
     # command string for ftgrouppha
     #
+    specdir = os.path.dirname(specfile)
+
     args = ['ftgrouppha',
             specfile,
-            'outfile=%s' % grpfile,
+            'outfile=%s' % os.path.relpath(grpfile, specdir),
             'grouptype=%s' % grptype,
             'clobber=yes']
 
@@ -50,25 +53,27 @@ def group_spec(grpfile, specfile, bkgfile=None, rmffile=None, grptype='opt', grp
         args += ['groupscale=%g' % grpscale]
 
     if rmffile is not None:
-        args += ['respfile=%s' % rmffile]
+        args += ['respfile=%s' % os.path.relpath(rmffile, specdir)]
     elif grptype=='opt':
         raise ValueError('Optimal binning requires the RMF to be provided.')
 
     if bkgfile is not None:
         args += ['backfile=%s' % bkgfile]
 
-    proc = subprocess.Popen(args).wait()
+    proc = subprocess.Popen(args, cwd=specdir).wait()
 
 
 def link_spectra(specfile, bkg=None, rmf=None, arf=None):
+    specdir = os.path.dirname(specfile)
+
     specfits = pyfits.open(specfile, mode='update')
 
     if bkg is not None:
-        specfits['SPECTRUM'].header['BACKFILE'] = bkg
+        specfits['SPECTRUM'].header['BACKFILE'] = os.path.relpath(bkg, specdir)
     if rmf is not None:
-        specfits['SPECTRUM'].header['RESPFILE'] = rmf
+        specfits['SPECTRUM'].header['RESPFILE'] = os.path.relpath(rmf, specdir)
     if arf is not None:
-        specfits['SPECTRUM'].header['ANCRFILE'] = arf
+        specfits['SPECTRUM'].header['ANCRFILE'] = os.path.relpath(arf, specdir)
 
     specfits.flush()
     specfits.close()
