@@ -68,7 +68,7 @@ class XtendExtractor(object):
     def pi_channel(self, eV):
         return int(0.1667 * eV)
 
-    def extract_spectrum(self, evl=None, spec_file=None, src_region=None, bkg_region=None, suffix=None):
+    def extract_spectrum(self, evl=None, spec_file=None, bkg_file=None, src_region=None, bkg_region=None, suffix=None):
         if evl is None:
             evl = self.evls[0]
         if spec_file is None:
@@ -80,10 +80,10 @@ class XtendExtractor(object):
             if suffix is not None:
                 name_arr.append(suffix)
 
-            src_spec_filename = '_'.join(name_arr) + '_src.pha'
-            src_spec_file = self.specdir + '/' + src_spec_filename
-            bkg_spec_filename = '_'.join(name_arr) + '_bkg.pha'
-            bkg_spec_file = self.specdir + '/' + bkg_spec_filename
+            spec_filename = '_'.join(name_arr) + '_src.pha'
+            spec_file = self.specdir + '/' + spec_filename
+            bkg_filename = '_'.join(name_arr) + '_bkg.pha'
+            bkg_file = self.specdir + '/' + bkg_filename
 
         if os.path.exists(spec_file):
             os.remove(spec_file)
@@ -92,7 +92,7 @@ class XtendExtractor(object):
             xsl.read_event(evl)
             xsl.command('filter region %s' % src_region)
             xsl.command('extract spectrum')
-            xsl.command('save spectrum %s' % src_spec_file)
+            xsl.command('save spectrum %s' % spec_file)
             if bkg_spec_file is not None:
                 xsl.command('clear region')
                 xsl.command('filter region %s' % bkg_region)
@@ -251,7 +251,7 @@ class XtendExtractor(object):
             grp_file = spec_file.replace('.pha', '_opt.grp')
 
             if extract_spectrum:
-                self.extract_spectrum(evl, spec_file, src_region, bkg_region, suffix)
+                self.extract_spectrum(evl, spec_file, bkg_file, src_region, bkg_region, suffix)
             if make_rmf:
                 self.make_rmf(rmf_file, spec_file=spec_file)
             if make_arf:
