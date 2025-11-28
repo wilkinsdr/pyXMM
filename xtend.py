@@ -14,7 +14,7 @@ class XtendExtractor(object):
     # class to extract data products from XRISM Xtend observations
     #
 
-    def __init__(self, obsdir, filt_level=2, ccd=None, mode=None, evl_dir='event_cl', run_reduction=False, suffix=None):
+    def __init__(self, obsdir, filt_level='', ccd=None, mode=None, evl_dir='event_cl', run_reduction=False, suffix=None):
         self.obsdir = obsdir
         self.rsldir = obsdir + '/xtend'
 
