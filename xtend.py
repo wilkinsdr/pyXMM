@@ -220,10 +220,10 @@ class XtendExtractor(object):
             if not os.path.exists(self.specdir):
                 os.mkdir(self.specdir)
 
-            spec_filename = '_'.join(name_arr) + '_%s' % ''.join(grade) + '_src.pha'
+            spec_filename = '_'.join(name_arr) + '_src.pha'
             spec_file = self.specdir + '/' + spec_filename
 
-            bkg_filename = '_'.join(name_arr) + '_%s' % ''.join(grade) + '_bkg.pha'
+            bkg_filename = '_'.join(name_arr) + '_bkg.pha'
             bkg_file = self.specdir + '/' + spec_filename
 
             if src_region is None:
