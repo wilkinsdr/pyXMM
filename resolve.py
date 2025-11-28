@@ -275,7 +275,7 @@ class ResolveExtractor(object):
         proc = subprocess.Popen(['punlearn', 'xaarfgen']).wait()
         proc = subprocess.Popen(args).wait()
 
-    def get_spectrum(self, grade=['Hp'], pixels='0:11,13:26,28:35', extract_evl=False, whichrmf='X', split_rmf=True, ra=None, dec=None, suffix=None, extract_spectrum=True, make_rmf=True, make_arf=True, link_resp=True):
+    def get_spectrum(self, grade=['Hp'], pixels='0:11,13:26,28:35', extract_evl=False, whichrmf='X', split_rmf=True, ra=None, dec=None, suffix=None, extract_spectrum=True, make_rmf=True, make_arf=True, link_resp=True, opt_bin=True):
         for evl in self.evls:
             name_arr = ['%srsl' % self.stem]
             if len(self.evls) > 1:
