@@ -44,7 +44,7 @@ def group_spec(grpfile, specfile, bkgfile=None, rmffile=None, grptype='opt', grp
     specdir = os.path.dirname(specfile)
 
     args = ['ftgrouppha',
-            specfile,
+            os.path.basename(specfile),
             'outfile=%s' % os.path.relpath(grpfile, specdir),
             'grouptype=%s' % grptype,
             'clobber=yes']
