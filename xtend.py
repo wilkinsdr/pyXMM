@@ -16,19 +16,19 @@ class XtendExtractor(object):
 
     def __init__(self, obsdir, filt_level=1, ccd=None, mode=None, evl_dir='event_cl', run_reduction=False, suffix=None):
         self.obsdir = obsdir
-        self.rsldir = obsdir + '/xtend'
+        self.xtddir = obsdir + '/xtend'
 
         self.stem = 'xa%s' % obsdir
 
         self.suffix = suffix
 
-        self.evlsdir = self.rsldir + '/%s' % evl_dir + ('_%s' % suffix if suffix is not None else '')
-        self.specdir = self.rsldir + '/spectra' + ('_%s' % suffix if suffix is not None else '')
-        self.lcdir = self.rsldir + '/lightcurves' + ('_%s' % suffix if suffix is not None else '')
-        self.regiondir = self.rsldir + '/regions'
-        self.gtidir = self.rsldir + '/gti'
-        self.ufdir = self.rsldir + '/event_uf'
-        self.scratchdir = self.rsldir + '/scratch'
+        self.evlsdir = self.xtddir + '/%s' % evl_dir + ('_%s' % suffix if suffix is not None else '')
+        self.specdir = self.xtddir + '/spectra' + ('_%s' % suffix if suffix is not None else '')
+        self.lcdir = self.xtddir + '/lightcurves' + ('_%s' % suffix if suffix is not None else '')
+        self.regiondir = self.xtddir + '/regions'
+        self.gtidir = self.xtddir + '/gti'
+        self.ufdir = self.xtddir + '/event_uf'
+        self.scratchdir = self.xtddir + '/scratch'
 
         if not os.path.exists(self.scratchdir):
             os.mkdir(self.scratchdir)
@@ -210,7 +210,7 @@ class XtendExtractor(object):
 
     def get_spectrum(self, src_region=None, bkg_region=None, ra=None, dec=None, suffix=None, extract_spectrum=True, make_rmf=True, make_arf=True, link_resp=True, opt_bin=True):
         for evl in self.evls:
-            name_arr = ['%srsl' % self.stem]
+            name_arr = ['%sxtd' % self.stem]
             if len(self.evls) > 1:
                 evl_name = os.path.basename(evl).split('_')[1]
                 name_arr.append(evl_name)
