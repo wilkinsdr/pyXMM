@@ -14,7 +14,7 @@ class XtendExtractor(object):
     # class to extract data products from XRISM Xtend observations
     #
 
-    def __init__(self, obsdir, filt_level='', ccd=None, mode=None, evl_dir='event_cl', run_reduction=False, suffix=None):
+    def __init__(self, obsdir, filt_level=1, ccd=None, mode=None, evl_dir='event_cl', run_reduction=False, suffix=None):
         self.obsdir = obsdir
         self.rsldir = obsdir + '/xtend'
 
@@ -38,7 +38,7 @@ class XtendExtractor(object):
         self.evls = self.find_evls(filt_level=filt_level, ccd=ccd, mode=mode)
         if len(self.evls) == 0:
             print('Filter level %d event list not available, falling back to level 1' % filt_level)
-            self.evls = self.find_evls(filt_level='')
+            self.evls = self.find_evls(filt_level='', ccd=ccd, mode=mode)
             self.filt_level = 1
 
         with fits.open(self.evls[0]) as f:
@@ -46,6 +46,8 @@ class XtendExtractor(object):
             self.dec_nom = f[0].header['DEC_NOM']
 
     def find_evls(self, filt_level='', ccd=None, mode=None):
+        if filt_level == 1:
+            filt_level = ''
         evls = [evl for evl in sorted(glob.glob(self.evlsdir + '/%sxtd_p????????_cl%s.evt*' % (self.stem, filt_level)))]
         if ccd == 1 or ccd == 2:
             if mode == 'window':
