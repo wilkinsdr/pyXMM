@@ -48,7 +48,7 @@ class XtendExtractor(object):
     def find_evls(self, filt_level='', ccd=None, mode=None):
         if filt_level == 1:
             filt_level = ''
-        evls = [evl for evl in sorted(glob.glob(self.evlsdir + '/%sxtd_p????????_cl%s.evt*' % (self.stem, filt_level)))]
+        evls = [evl for evl in sorted(glob.glob(self.evlsdir + '/%sxtd_p*_cl%s.evt*' % (self.stem, filt_level)))]
         if ccd == 1 or ccd == 2:
             if mode == 'window':
                 evls = [e for e in evls if 'p0311' in e]
