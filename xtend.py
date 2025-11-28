@@ -227,12 +227,12 @@ class XtendExtractor(object):
             bkg_file = self.specdir + '/' + bkg_filename
 
             if src_region is None:
-                if os.path.exists(self.regiondir + '/src_%s.reg' % evl_name):
+                if len(self.evls) > 1 and os.path.exists(self.regiondir + '/src_%s.reg' % evl_name):
                     src_region = self.regiondir + '/src_%s.reg' % evl_name
                 else:
                     src_region = self.regiondir + '/src.reg'
             if bkg_region is None:
-                if os.path.exists(self.regiondir + '/bkg_%s.reg' % evl_name):
+                if len(self.evls) > 1 and os.path.exists(self.regiondir + '/bkg_%s.reg' % evl_name):
                     bkg_region = self.regiondir + '/bkg_%s.reg' % evl_name
                 else:
                     bkg_region = self.regiondir + '/bkg.reg'
