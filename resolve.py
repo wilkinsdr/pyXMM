@@ -234,11 +234,6 @@ class ResolveExtractor(object):
         if xrtevtfile is None:
             xrtevtfile = self.scratchdir + '/' + os.path.basename(outfile).replace('.arf', '_raytrace_pt.evt')
 
-        if os.path.exists(outfile):
-            os.remove(outfile)
-        if os.path.exists(xrtevtfile):
-            os.remove(xrtevtfile)
-
         if expomap is None or not os.path.exists(expomap):
             raise AssertionError('Exposure map does not exist')
         if regionfile is None or not os.path.exists(regionfile):
@@ -271,7 +266,9 @@ class ResolveExtractor(object):
                 'backreffile=CALDB',
                 'pcolreffile=CALDB',
                 'scatterfile=CALDB',
-                'imgfile=NONE']
+                'imgfile=NONE',
+                'clobber=yes',
+                'mode=h']
 
         print(' '.join(args))
 
