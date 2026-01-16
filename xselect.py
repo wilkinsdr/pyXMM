@@ -40,3 +40,8 @@ class Xselect(object):
         self.command('read event')
         self.command(evl_dir)
         self.command(evl_filename)
+
+    def filter_time_scc(self, tstart, tend):
+        self.command('filter time scc')
+        self.command('%g, %g' % (tstart, tend))
+        self.command('x')
