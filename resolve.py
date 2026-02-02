@@ -149,6 +149,9 @@ class ResolveExtractor(object):
         if os.path.exists(spec_file):
             os.remove(spec_file)
 
+        if extract_evl and os.path.exists(extract_evl):
+            os.remove(extract_evl)
+
         with Xselect() as xsl:
             xsl.read_event(evl)
             if time is not None:
@@ -158,8 +161,10 @@ class ResolveExtractor(object):
                 # for rslmkrmf
                 xsl.command('extract events')
                 xsl.command('save events %s' % extract_evl)
+                xsl.command('no')
             if pixels is not None:
                 xsl.command('filter column "PIXEL=%s"' % pixels)
+
             xsl.command('filter GRADE %s' % grade_filt)
             xsl.command('extract spectrum')
             xsl.command('save spectrum %s' % spec_file)
@@ -184,7 +189,8 @@ class ResolveExtractor(object):
                 'whichrmf=%s' % whichrmf,
                 'resolist=%s' % resolist,
                 'regionfile=None',
-                'pixlist=%s' % pixels]
+                'pixlist=%s' % pixels,
+                'clobber=yes']
 
         if split:
             args.append('splitrmf=yes')
@@ -216,7 +222,8 @@ class ResolveExtractor(object):
                 'outfile=%s' % outfile,
                 'outmaptype=EXPOSURE',
                 'delta=20.0',
-                'numphi=1']
+                'numphi=1',
+                'clobber=yes']
 
         print(' '.join(args))
 
